@@ -162,7 +162,7 @@ def test_directory_picker_navigation_autocomplete_badges_and_hidden_toggle(picke
 
     page = browser.new_page(viewport={"width": 1440, "height": 900})
     expect = playwright.expect
-    page.goto(f"{url}/?lang=zh")
+    page.goto(f"{url}/")
 
     page.locator("#nav-workspaces").click()
     dialog = page.locator("#workspace-manager-dialog")
@@ -236,7 +236,7 @@ def test_workspace_dialog_new_project_creates_directory_and_inits_git(picker_ser
 
     page = browser.new_page(viewport={"width": 1440, "height": 900})
     expect = playwright.expect
-    page.goto(f"{url}/?lang=zh")
+    page.goto(f"{url}/")
 
     page.locator("#nav-workspaces").click()
     dialog = page.locator("#workspace-manager-dialog")
@@ -291,7 +291,7 @@ def test_workspace_dialog_clone_url_derivation_errors_and_bare_repo_clone(
 
     page = browser.new_page(viewport={"width": 1440, "height": 900})
     expect = playwright.expect
-    page.goto(f"{url}/?lang=zh")
+    page.goto(f"{url}/")
 
     page.locator("#nav-workspaces").click()
     dialog = page.locator("#workspace-manager-dialog")
@@ -357,7 +357,7 @@ def test_issue_oracle_picker_greenfield_and_brownfield_without_typing_absolute_p
 
     page = browser.new_page(viewport={"width": 1440, "height": 900})
     expect = playwright.expect
-    page.goto(f"{url}/?lang=zh")
+    page.goto(f"{url}/")
 
     page.locator("#btn-issue-oracle").click()
     dialog = page.locator("#new-run-dialog")

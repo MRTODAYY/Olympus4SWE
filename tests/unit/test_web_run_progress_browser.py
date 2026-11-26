@@ -779,7 +779,7 @@ def skip_dag(workbench):
 def test_task_dag_island_keeps_fixed_scale_and_routes_around_cards(skip_dag, browser):
     _, run_id, url = skip_dag
     page = browser.new_page(viewport={"width": 1600, "height": 1000})
-    page.goto(f"{url}/?run={run_id}&lang=zh")
+    page.goto(f"{url}/?run={run_id}")
     geo = _wait_for_layout(page)
     _assert_graph_stylesheet_applied(page)
     cards = {card["id"]: card for card in geo["cards"]}
@@ -839,7 +839,7 @@ def test_task_dag_island_separates_selection_from_critical_path(workbench, brows
     page = browser.new_page(viewport={"width": 1600, "height": 1000})
     errors = []
     page.on("pageerror", lambda error: errors.append(str(error)))
-    page.goto(f"{url}/?run={run_id}&lang=zh")
+    page.goto(f"{url}/?run={run_id}")
     expect = playwright.expect
     geo = _wait_for_layout(page)
     edges = {(edge["source"], edge["target"]): edge for edge in geo["edges"]}
@@ -1603,7 +1603,7 @@ def test_graph_islands_scroll_safe_controls_and_readonly_cards(workbench, browse
     page = browser.new_page(viewport={"width": 1200, "height": 720})
     errors = []
     page.on("pageerror", lambda error: errors.append(str(error)))
-    page.goto(f"{url}/?run={run_id}&lang=zh")
+    page.goto(f"{url}/?run={run_id}")
     _wait_for_workflow(page)
     _wait_for_layout(page)
 
@@ -1678,7 +1678,7 @@ def test_graph_islands_hover_lineage_highlighting(skip_dag, browser):
     page = browser.new_page(viewport={"width": 1600, "height": 1000})
     errors = []
     page.on("pageerror", lambda error: errors.append(str(error)))
-    page.goto(f"{url}/?run={run_id}&lang=zh")
+    page.goto(f"{url}/?run={run_id}")
     expect = playwright.expect
     _wait_for_workflow(page)
     _wait_for_layout(page)
@@ -1835,7 +1835,7 @@ def test_task_dag_handles_arrow_ids_and_high_fanin_port_spacing(workbench, brows
     )
 
     page = browser.new_page(viewport={"width": 1600, "height": 1000})
-    page.goto(f"{url}/?run={run_id}&lang=zh")
+    page.goto(f"{url}/?run={run_id}")
     _wait_for_layout(page)
     rendered = page.locator("#dag-graph .ag-edge[data-edge-source]").evaluate_all(
         "els => els.map(el => [el.dataset.edgeSource, el.dataset.edgeTarget])"
@@ -1938,7 +1938,7 @@ def test_oracle_board_landing_columns_mode_filters_and_deep_link(workbench, brow
 
     page = browser.new_page(viewport={"width": 1440, "height": 900})
     expect = playwright.expect
-    page.goto(f"{url}/?lang=zh")
+    page.goto(f"{url}/")
 
     # Lands on L1 Oracle Board with 3 Ball-in-Court columns and data-god attributes.
     expect(page.locator("body")).to_have_attribute("data-surface", "board")
@@ -1983,7 +1983,7 @@ def test_oracle_board_landing_columns_mode_filters_and_deep_link(workbench, brow
     expect(page.locator("#oracle-board-columns")).to_be_visible()
 
     # Legacy deep link (?run=<id>#design) lands directly in L2 Ariadne Cockpit with tab open.
-    page.goto(f"{url}/?run={demo_id}&lang=zh#design")
+    page.goto(f"{url}/?run={demo_id}#design")
     expect(page.locator("body")).to_have_attribute("data-surface", "oracle")
     expect(page.locator("#view-design")).to_be_visible()
     expect(page.locator(f"#open-tabs .ariadne-tab[data-run-id='{demo_id}']")).to_have_attribute(
@@ -2012,7 +2012,7 @@ def test_workspace_register_unregister_and_switching_preserves_cross_project_tab
 
     page = browser.new_page(viewport={"width": 1440, "height": 900})
     expect = playwright.expect
-    page.goto(f"{url}/?lang=zh")
+    page.goto(f"{url}/")
 
     # Open a Workspace 1 Oracle as an L2 Ariadne tab, then return to Oracle Board.
     page.locator(f".oracle-card[data-run-id='{ws1_run}'] .oracle-card-trigger").click()
@@ -2077,7 +2077,7 @@ def test_open_and_close_ariadne_tabs_persist_without_deleting_runs(workbench, br
 
     page = browser.new_page(viewport={"width": 1440, "height": 900})
     expect = playwright.expect
-    page.goto(f"{url}/?lang=zh")
+    page.goto(f"{url}/")
 
     # Seed a stale ID in localStorage alongside opening a real card.
     page.evaluate(
@@ -2121,7 +2121,7 @@ def test_live_board_sse_updates_pending_ruling_badge_while_on_l2_tab(workbench, 
 
     page = browser.new_page(viewport={"width": 1440, "height": 900})
     expect = playwright.expect
-    page.goto(f"{url}/?run={demo_id}&lang=zh")
+    page.goto(f"{url}/?run={demo_id}")
     expect(page.locator("body")).to_have_attribute("data-surface", "oracle")
 
     initial_pending = httpx.get(f"{url}/api/runs").json()["pending_ruling_total"]

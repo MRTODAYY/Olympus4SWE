@@ -121,7 +121,7 @@ def test_issue_oracle_modal_scoped_creation_and_error_resilience(
 
     page = browser.new_page(viewport={"width": 1440, "height": 900})
     expect = playwright.expect
-    page.goto(f"{url}/?lang=zh")
+    page.goto(f"{url}/")
 
     page.locator("#workspace-switcher").select_option(default_ws["workspace_id"])
     page.locator("#btn-issue-oracle").click()
@@ -237,7 +237,7 @@ def test_issue_oracle_benchmark_sample_disclosure_and_advanced_overrides(board_s
     _, _, url = board_server
     page = browser.new_page(viewport={"width": 1440, "height": 900})
     expect = playwright.expect
-    page.goto(f"{url}/?lang=zh")
+    page.goto(f"{url}/")
 
     page.locator("#btn-issue-oracle").click()
     dialog = page.locator("#new-run-dialog")
@@ -572,7 +572,7 @@ def test_quick_ruling_drawer_blocker_resolution_and_open_cockpit_escape_hatch(
 
     page = browser.new_page(viewport={"width": 1440, "height": 900})
     expect = playwright.expect
-    page.goto(f"{url}/?lang=zh")
+    page.goto(f"{url}/")
 
     blocker_cta = page.locator(f"[data-quick-rule='{blocked_id}']")
     expect(blocker_cta).to_contain_text("Resolve Blocker")
@@ -608,7 +608,7 @@ def test_stale_drawer_response_keeps_other_drawer_open_and_preserves_tabs_past_l
 
     page = browser.new_page(viewport={"width": 1440, "height": 900})
     expect = playwright.expect
-    page.goto(f"{url}/?lang=zh")
+    page.goto(f"{url}/")
 
     drawer = page.locator("#quick-ruling-drawer")
     page.locator(f"[data-quick-rule='{first_id}']").click()
@@ -639,7 +639,7 @@ def test_stale_drawer_response_keeps_other_drawer_open_and_preserves_tabs_past_l
     page.close()
 
     p2 = browser.new_page(viewport={"width": 1440, "height": 900})
-    p2.goto(f"{url}/?lang=zh")
+    p2.goto(f"{url}/")
     keep_id = store.create_run(run_id="keep-older-tab", title="Older Open Tab")
     p2.locator(f".oracle-card[data-run-id='{keep_id}'] .oracle-card-trigger").click()
     tab = p2.locator(f"#open-tabs [data-run-id='{keep_id}']")
@@ -723,7 +723,7 @@ def test_clarify_panel_hides_after_spec_approval_even_with_unanswered_non_blocki
     expect = playwright.expect
 
     # Before GoalSpec approval (Stage 1): ClarifyPanel is visible for optional clarification/notes.
-    page.goto(f"{url}/?run={run_id}&lang=zh#topology")
+    page.goto(f"{url}/?run={run_id}#topology")
     expect(page.locator("#clarify-panel")).to_be_visible()
     expect(page.locator("#btn-clarify-submit")).to_be_visible()
     expect(page.locator("#clarify-notes")).to_contain_text("Keep browser waterfall UI")
@@ -759,11 +759,11 @@ def test_clarify_panel_hides_after_spec_approval_even_with_unanswered_non_blocki
         payload={"pause_kind": "blocked", "reason": "Delivery check failed"},
     )
 
-    page.goto(f"{url}/?run={run_id}&lang=zh#topology")
+    page.goto(f"{url}/?run={run_id}#topology")
     expect(page.locator("#hitl-banner")).to_be_visible()
     expect(page.locator("#clarify-panel")).to_be_hidden()
 
-    page.goto(f"{url}/?lang=zh")
+    page.goto(f"{url}/")
     page.locator(f"[data-quick-rule='{run_id}']").click()
     drawer = page.locator("#quick-ruling-drawer")
     expect(drawer).to_be_visible()

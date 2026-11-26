@@ -344,7 +344,7 @@ def test_pantheon_dock_renders_five_seats_in_order_with_live_states_and_workspac
 
     page = browser.new_page(viewport={"width": 1440, "height": 900})
     expect = playwright.expect
-    page.goto(f"{url}/?lang=zh")
+    page.goto(f"{url}/")
 
     dock = page.locator("#pantheon-dock")
     expect(dock).to_be_visible()
@@ -464,7 +464,7 @@ def test_pantheon_dock_click_and_hover_cross_column_highlight_and_clear(pantheon
 
     page = browser.new_page(viewport={"width": 1440, "height": 900})
     expect = playwright.expect
-    page.goto(f"{url}/?lang=zh")
+    page.goto(f"{url}/")
 
     prom_seat = page.locator("#pantheon-dock .pantheon-seat[data-god='prometheus']")
     heph_seat = page.locator("#pantheon-dock .pantheon-seat[data-god='hephaestus']")
@@ -574,7 +574,7 @@ def test_god_avatar_asset_slot_working_animation_reduced_motion_and_fallback(
         },
     }
     page.add_init_script(f"window.__OLYMPUS_AVATAR_MANIFEST__ = {json.dumps(manifest)};")
-    page.goto(f"{url}/?lang=zh")
+    page.goto(f"{url}/")
 
     prom_avatar = page.locator("#pantheon-dock .pantheon-seat[data-god='prometheus'] .god-avatar")
     heph_avatar = page.locator("#pantheon-dock .pantheon-seat[data-god='hephaestus'] .god-avatar")
@@ -636,7 +636,7 @@ def test_pantheon_dock_updates_live_via_board_sse(pantheon_server, browser):
 
     page = browser.new_page(viewport={"width": 1440, "height": 900})
     expect = playwright.expect
-    page.goto(f"{url}/?lang=zh")
+    page.goto(f"{url}/")
 
     prom_seat = page.locator("#pantheon-dock .pantheon-seat[data-god='prometheus']")
     expect(prom_seat).to_have_attribute("data-state", "working")

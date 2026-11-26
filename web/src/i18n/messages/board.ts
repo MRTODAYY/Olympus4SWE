@@ -27,8 +27,10 @@ export const EN: Record<string, string> = {
   "筛选中：": "Filtered:",
   "{count} 项待你裁决": "{count} awaiting your ruling",
   "{count} 个进行中任务": "{count} in flight",
-  "项待裁决": "awaiting ruling",
-  "个进行中": "in flight",
+  // Seat aria-label vocabulary. The English strings must stay byte-identical to the
+  // pre-i18n literals ("{n} waiting, {n} active") — browser specs assert that attribute.
+  "项待裁决": "waiting",
+  "个进行中": "active",
 };
 
 export const ZH: Record<string, string> = {
