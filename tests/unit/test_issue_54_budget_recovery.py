@@ -1071,7 +1071,9 @@ def test_completed_run_reopened_by_clarify_routes_to_gate_spec(tmp_path: Path) -
 def test_web_spa_renders_unlimited_llm_calls() -> None:
     text = (_WEB_SRC / "components" / "TopologyView.tsx").read_text(encoding="utf-8")
     assert "budget.max_calls == null" in text
-    assert "`${budget.calls_used} 次`" in text
+    # The unlimited branch is localized now: the "{used} 次" copy resolves through
+    # the i18n key instead of an inline template literal, so assert the lookup.
+    assert 't("{used} 次"' in text
     assert "`${budget.calls_used} / ${budget.max_calls}`" in text
 
 
