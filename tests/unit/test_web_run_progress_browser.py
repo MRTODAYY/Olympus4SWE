@@ -424,21 +424,21 @@ def test_design_and_plan_rereview_show_previous_tradeoff_and_dependency(export_p
     }))
 
     page = browser.new_page()
-    page.goto(f"{url}/?run={run_id}")
+    page.goto(f"{url}/?run={run_id}&lang=zh")
     expect = playwright.expect
     design_review = page.get_by_role("article", name="DesignSpec · v2")
     old_choice = design_review.get_by_text("选择：保留旧列", exact=True)
     expect(old_choice).to_be_visible()
-    expect(old_choice.locator("xpath=ancestor::li").get_by_text("Removed", exact=True)).to_be_visible()
+    expect(old_choice.locator("xpath=ancestor::li").get_by_text("移除", exact=True)).to_be_visible()
     design_review.get_by_role("button", name="定位 上次批准的 回滚").click()
     expect(design_review.get_by_text("/design_tradeoffs/0", exact=True)).to_be_focused()
     expect(design_review.locator("[data-review-baseline] pre")).to_contain_text(design.content_hash)
     plan_review = page.get_by_role("article", name="任务计划 · v2")
     dependency = plan_review.get_by_text("才能开始", exact=False)
     expect(dependency.first).to_be_visible()
-    expect(dependency.first.locator("xpath=ancestor::li").get_by_text("Removed", exact=True)
+    expect(dependency.first.locator("xpath=ancestor::li").get_by_text("移除", exact=True)
            ).to_be_visible()
-    expect(plan_review.get_by_role("button", name="View task DAG")).to_be_visible()
+    expect(plan_review.get_by_role("button", name="查看任务依赖图")).to_be_visible()
 
 
 def test_plan_history_survives_task_graph_and_updates_over_sse(export_plan, browser):
@@ -963,7 +963,7 @@ def test_task_dag_shows_inline_titles_within_fixed_cards(workbench, browser):
         route.fulfill(response=response, json=data)
 
     page.route(f"**/api/runs/{run_id}", set_graph_titles)
-    page.goto(f"{url}/?run={run_id}&nosse=1")
+    page.goto(f"{url}/?run={run_id}&nosse=1&lang=zh")
     _wait_for_layout(page)
     expect = playwright.expect
     first = page.locator("#dag-graph .ag-task-card[data-task-id='T01']")
@@ -1004,7 +1004,7 @@ def test_task_dag_shows_inline_titles_within_fixed_cards(workbench, browser):
 def test_task_dag_island_empty_cycle_fallback_and_missing_bundle(workbench, browser):
     _, run_id, url = workbench
     page = browser.new_page(viewport={"width": 1400, "height": 900})
-    page.goto(f"{url}/?run={run_id}")
+    page.goto(f"{url}/?run={run_id}&lang=zh")
     _wait_for_layout(page)
     _assert_graph_stylesheet_applied(page)
     expect = playwright.expect
@@ -1034,7 +1034,7 @@ def test_task_dag_island_empty_cycle_fallback_and_missing_bundle(workbench, brow
       });
     }""")
     empty = page.locator("#graph-empty")
-    expect(empty.get_by_text("This run has not produced a task DAG yet", exact=True)).to_be_visible()
+    expect(empty.get_by_text("当前运行尚未生成任务 DAG", exact=True)).to_be_visible()
     expect(empty.locator("[data-task-id]")).to_have_count(0)
 
     cycle = page.locator("#graph-cycle")
@@ -1061,12 +1061,12 @@ def test_task_dag_island_empty_cycle_fallback_and_missing_bundle(workbench, brow
 
     broken = browser.new_page()
     broken.route("**/static/assets/ariadne-graph*.js", lambda route: route.abort())
-    broken.goto(f"{url}/?run={run_id}")
-    expect(broken.locator("#dag-graph")).to_contain_text("failed to load")
+    broken.goto(f"{url}/?run={run_id}&lang=zh")
+    expect(broken.locator("#dag-graph")).to_contain_text("任务依赖图组件未能加载")
     expect(broken.locator("#workflow-graph[data-workflow-view='staged']")).to_be_visible()
     expect(broken.locator("#workflow-graph [data-workflow-node]")).to_have_count(10)
-    expect(broken.locator("#workflow-badge")).to_contain_text("Product Blueprint")
-    expect(broken.locator("#run-current-stage")).to_contain_text("task blocked")
+    expect(broken.locator("#workflow-badge")).to_contain_text("产品蓝图")
+    expect(broken.locator("#run-current-stage")).to_contain_text("有任务受阻")
     broken.unroute("**/static/assets/ariadne-graph*.js")
     broken.locator("#nav-oracle-board").click()
     broken.locator(f".oracle-card:not([data-run-id='{run_id}']) .oracle-card-trigger").first.click()
@@ -1081,8 +1081,8 @@ def test_task_dag_island_empty_cycle_fallback_and_missing_bundle(workbench, brow
     ):
         css_broken = browser.new_page()
         css_broken.route("**/static/assets/ariadne-graph*.css*", handler)
-        css_broken.goto(f"{url}/?run={run_id}")
-        expect(css_broken.locator("#dag-graph")).to_contain_text("failed to load")
+        css_broken.goto(f"{url}/?run={run_id}&lang=zh")
+        expect(css_broken.locator("#dag-graph")).to_contain_text("任务依赖图组件未能加载")
         expect(css_broken.locator("#workflow-graph[data-workflow-view='staged']")).to_be_visible()
         assert css_broken.locator("#dag-graph .ag-island").count() == 0, label
         css_broken.unroute("**/static/assets/ariadne-graph*.css*")
@@ -1097,7 +1097,7 @@ def test_task_dag_island_empty_cycle_fallback_and_missing_bundle(workbench, brow
 
     stalled_css = browser.new_page()
     stalled_css.route("**/static/assets/ariadne-graph*.css*", lambda _route: None)
-    stalled_css.goto(f"{url}/?run={run_id}")
+    stalled_css.goto(f"{url}/?run={run_id}&lang=zh")
     expect(stalled_css.locator("#dag-graph")).to_contain_text(
         "ariadne-graph.css load timed out", timeout=7000
     )
@@ -1126,7 +1126,7 @@ def test_task_dag_island_empty_cycle_fallback_and_missing_bundle(workbench, brow
     )
     late_js.route(initial_js_re, lambda route: held_js.append(route))
     late_js.route(retry_css_re, lambda route: held_retry_css.append(route))
-    late_js.goto(f"{url}/?run={run_id}&nosse=1")
+    late_js.goto(f"{url}/?run={run_id}&nosse=1&lang=zh")
     _wait_for_intercepted(late_js, held_js)
     late_js.clock.fast_forward(20_500)
     expect(late_js.locator("#dag-graph")).to_contain_text(
