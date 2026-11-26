@@ -1,21 +1,35 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-theme="light">
+<html lang="en" data-theme="light">
 <head>
-  <meta name="ariadne-source-sha256" content="fb6dc2bcb6be97f428dbe2ecee82187795a3778520a2a9e58693b4a5c2fb0c20">
+  <meta name="ariadne-source-sha256" content="2f8ad53d12f6a21461feae1989e136e6dff0ad8031ee34220d17da4a89be8ba5">
 
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Ariadne · Olympus4SWE 研发编排工作台</title>
+  <title>Ariadne · Olympus4SWE</title>
   <link rel="icon" type="image/svg+xml" href="/static/assets/favicon.svg">
   <script>
     (() => {
       try {
-        const saved = localStorage.getItem("olympus-theme");
-        if (saved === "dark" || saved === "light") {
-          document.documentElement.dataset.theme = saved;
+        const savedTheme = localStorage.getItem("olympus-theme");
+        if (savedTheme === "dark" || savedTheme === "light") {
+          document.documentElement.dataset.theme = savedTheme;
         }
       } catch (error) {
-        return;
+        /* storage blocked — fall back to the default theme */
+      }
+      try {
+        const fromUrl = new URLSearchParams(location.search).get("lang");
+        const savedLocale = localStorage.getItem("olympus-locale");
+        const locale =
+          fromUrl === "zh" || fromUrl === "en"
+            ? fromUrl
+            : savedLocale === "zh" || savedLocale === "en"
+              ? savedLocale
+              : "en";
+        document.documentElement.lang = locale === "zh" ? "zh-CN" : "en";
+        document.documentElement.dataset.locale = locale;
+      } catch (error) {
+        document.documentElement.dataset.locale = "en";
       }
     })();
   </script>
