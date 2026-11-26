@@ -96,7 +96,7 @@ export const EN: Record<string, string> = {
   "新增": "Added",
   "移除": "Removed",
   "需复核": "Needs review",
-  "定位上次批准的 {name}": "Locate the previously approved {name}",
+  "定位 上次批准的 {name}": "Locate the previously approved {name}",
   "定位 {name}": "Locate {name}",
   "上次原条目": "Previous entry",
   "原条目": "Original entry",

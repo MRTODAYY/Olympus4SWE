@@ -55,7 +55,7 @@ function OriginButton({
       data-review-old-ref={baseline ? "" : undefined}
       aria-label={
         baseline
-          ? t("定位上次批准的 {name}", { name: entryName })
+          ? t("定位 上次批准的 {name}", { name: entryName })
           : t("定位 {name}", { name: entryName })
       }
       onClick={() => onLocate(pointer, baseline)}
