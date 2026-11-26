@@ -112,7 +112,7 @@ def test_issue_oracle_modal_scoped_creation_and_error_resilience(
     board_server, browser, tmp_path: Path
 ):
     store, workspace, url = board_server
-    default_ws = httpx.get(f"{url}/api/workspaces").json()["workspaces"][0]
+    default_ws = httpx.get(f"{url}/?lang=zh").json()["workspaces"][0]
 
     populated_dir = tmp_path / "already-populated"
     populated_dir.mkdir()
@@ -121,7 +121,7 @@ def test_issue_oracle_modal_scoped_creation_and_error_resilience(
 
     page = browser.new_page(viewport={"width": 1440, "height": 900})
     expect = playwright.expect
-    page.goto(f"{url}/")
+    page.goto(f"{url}/?lang=zh")
 
     page.locator("#workspace-switcher").select_option(default_ws["workspace_id"])
     page.locator("#btn-issue-oracle").click()
@@ -208,7 +208,7 @@ def test_issue_oracle_modal_scoped_creation_and_error_resilience(
     gf_card = page.locator(f".oracle-card[data-run-id='{greenfield_run_id}']")
     expect(gf_card).to_be_visible()
     expect(gf_card).to_have_attribute("data-mode", "greenfield")
-    ws_names = [ws["name"] for ws in httpx.get(f"{url}/api/workspaces").json()["workspaces"]]
+    ws_names = [ws["name"] for ws in httpx.get(f"{url}/?lang=zh").json()["workspaces"]]
     assert "voice-cli-new" in ws_names
 
     page.locator("#workspace-switcher").select_option("")
@@ -237,7 +237,7 @@ def test_issue_oracle_benchmark_sample_disclosure_and_advanced_overrides(board_s
     _, _, url = board_server
     page = browser.new_page(viewport={"width": 1440, "height": 900})
     expect = playwright.expect
-    page.goto(f"{url}/")
+    page.goto(f"{url}/?lang=zh")
 
     page.locator("#btn-issue-oracle").click()
     dialog = page.locator("#new-run-dialog")
@@ -460,7 +460,7 @@ def test_quick_ruling_drawer_clarify_approve_conflict_resync_without_opening_tab
 
         page = browser.new_page(viewport={"width": 1440, "height": 900})
         expect = playwright.expect
-        page.goto(f"{url}/")
+        page.goto(f"{url}/?lang=zh")
 
         page.locator(f".oracle-card[data-run-id='{existing_tab_id}'] .oracle-card-trigger").click()
         expect(page.locator("#open-tabs .ariadne-tab")).to_have_count(1)
@@ -478,7 +478,7 @@ def test_quick_ruling_drawer_clarify_approve_conflict_resync_without_opening_tab
         expect(page.locator("#open-tabs .ariadne-tab")).to_have_count(1)
 
         drawer.get_by_role("button", name="SQLite table", exact=True).click()
-        with page.expect_response(f"{url}/api/runs/{clarify_id}/command") as clarify_res:
+        with page.expect_response(f"{url}/?lang=zh") as clarify_res:
             drawer.locator("#btn-clarify-submit").click()
         assert clarify_res.value.status == 200
         expect(drawer).to_be_hidden()
@@ -491,7 +491,7 @@ def test_quick_ruling_drawer_clarify_approve_conflict_resync_without_opening_tab
         spec_cta.click()
         expect(drawer).to_be_visible()
         expect(drawer.locator("[data-review-action='approve_spec']")).to_be_visible()
-        with page.expect_response(f"{url}/api/runs/{spec_id}/command") as spec_res:
+        with page.expect_response(f"{url}/?lang=zh") as spec_res:
             drawer.locator("[data-approve='approve_spec']").click()
         assert spec_res.value.status == 200
         expect(drawer).to_be_hidden()
@@ -525,15 +525,15 @@ def test_quick_ruling_drawer_clarify_approve_conflict_resync_without_opening_tab
             store.save_plan(plan_id, plan_v2)
             route.continue_()
 
-        page.route(f"{url}/api/runs/{plan_id}/command", bump_before_approve, times=1)
-        with page.expect_response(f"{url}/api/runs/{plan_id}/command") as stale_res:
+        page.route(f"{url}/?lang=zh", bump_before_approve, times=1)
+        with page.expect_response(f"{url}/?lang=zh") as stale_res:
             drawer.locator("[data-approve='approve_plan']").click()
         assert stale_res.value.status == 409
         expect(drawer).to_be_visible()
         expect(drawer.locator("#quick-drawer-notice")).to_contain_text("请确认后重试")
         expect(drawer.get_by_role("heading", name="任务计划 · v2")).to_be_visible()
 
-        with page.expect_response(f"{url}/api/runs/{plan_id}/command") as fresh_res:
+        with page.expect_response(f"{url}/?lang=zh") as fresh_res:
             drawer.locator("[data-approve='approve_plan']").click()
         assert fresh_res.value.status == 200
         expect(drawer).to_be_hidden()
@@ -572,7 +572,7 @@ def test_quick_ruling_drawer_blocker_resolution_and_open_cockpit_escape_hatch(
 
     page = browser.new_page(viewport={"width": 1440, "height": 900})
     expect = playwright.expect
-    page.goto(f"{url}/")
+    page.goto(f"{url}/?lang=zh")
 
     blocker_cta = page.locator(f"[data-quick-rule='{blocked_id}']")
     expect(blocker_cta).to_contain_text("Resolve Blocker")
@@ -581,7 +581,7 @@ def test_quick_ruling_drawer_blocker_resolution_and_open_cockpit_escape_hatch(
     drawer = page.locator("#quick-ruling-drawer")
     expect(drawer).to_be_visible()
     expect(drawer.locator("#quick-drawer-blocker")).to_be_visible()
-    with page.expect_response(f"{url}/api/runs/{blocked_id}/command") as retry_res:
+    with page.expect_response(f"{url}/?lang=zh") as retry_res:
         drawer.locator("#btn-drawer-blocker-retry").click()
     assert retry_res.value.status == 200
     expect(drawer).to_be_hidden()
@@ -608,7 +608,7 @@ def test_stale_drawer_response_keeps_other_drawer_open_and_preserves_tabs_past_l
 
     page = browser.new_page(viewport={"width": 1440, "height": 900})
     expect = playwright.expect
-    page.goto(f"{url}/")
+    page.goto(f"{url}/?lang=zh")
 
     drawer = page.locator("#quick-ruling-drawer")
     page.locator(f"[data-quick-rule='{first_id}']").click()
@@ -639,7 +639,7 @@ def test_stale_drawer_response_keeps_other_drawer_open_and_preserves_tabs_past_l
     page.close()
 
     p2 = browser.new_page(viewport={"width": 1440, "height": 900})
-    p2.goto(f"{url}/")
+    p2.goto(f"{url}/?lang=zh")
     keep_id = store.create_run(run_id="keep-older-tab", title="Older Open Tab")
     p2.locator(f".oracle-card[data-run-id='{keep_id}'] .oracle-card-trigger").click()
     tab = p2.locator(f"#open-tabs [data-run-id='{keep_id}']")
@@ -723,7 +723,7 @@ def test_clarify_panel_hides_after_spec_approval_even_with_unanswered_non_blocki
     expect = playwright.expect
 
     # Before GoalSpec approval (Stage 1): ClarifyPanel is visible for optional clarification/notes.
-    page.goto(f"{url}/?run={run_id}#topology")
+    page.goto(f"{url}/?run={run_id}&lang=zh#topology")
     expect(page.locator("#clarify-panel")).to_be_visible()
     expect(page.locator("#btn-clarify-submit")).to_be_visible()
     expect(page.locator("#clarify-notes")).to_contain_text("Keep browser waterfall UI")
@@ -759,11 +759,11 @@ def test_clarify_panel_hides_after_spec_approval_even_with_unanswered_non_blocki
         payload={"pause_kind": "blocked", "reason": "Delivery check failed"},
     )
 
-    page.goto(f"{url}/?run={run_id}#topology")
+    page.goto(f"{url}/?run={run_id}&lang=zh#topology")
     expect(page.locator("#hitl-banner")).to_be_visible()
     expect(page.locator("#clarify-panel")).to_be_hidden()
 
-    page.goto(f"{url}/")
+    page.goto(f"{url}/?lang=zh")
     page.locator(f"[data-quick-rule='{run_id}']").click()
     drawer = page.locator("#quick-ruling-drawer")
     expect(drawer).to_be_visible()

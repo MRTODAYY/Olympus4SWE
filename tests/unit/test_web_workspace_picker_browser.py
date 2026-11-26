@@ -162,7 +162,7 @@ def test_directory_picker_navigation_autocomplete_badges_and_hidden_toggle(picke
 
     page = browser.new_page(viewport={"width": 1440, "height": 900})
     expect = playwright.expect
-    page.goto(f"{url}/")
+    page.goto(f"{url}/?lang=zh")
 
     page.locator("#nav-workspaces").click()
     dialog = page.locator("#workspace-manager-dialog")
@@ -236,7 +236,7 @@ def test_workspace_dialog_new_project_creates_directory_and_inits_git(picker_ser
 
     page = browser.new_page(viewport={"width": 1440, "height": 900})
     expect = playwright.expect
-    page.goto(f"{url}/")
+    page.goto(f"{url}/?lang=zh")
 
     page.locator("#nav-workspaces").click()
     dialog = page.locator("#workspace-manager-dialog")
@@ -291,7 +291,7 @@ def test_workspace_dialog_clone_url_derivation_errors_and_bare_repo_clone(
 
     page = browser.new_page(viewport={"width": 1440, "height": 900})
     expect = playwright.expect
-    page.goto(f"{url}/")
+    page.goto(f"{url}/?lang=zh")
 
     page.locator("#nav-workspaces").click()
     dialog = page.locator("#workspace-manager-dialog")
@@ -357,7 +357,7 @@ def test_issue_oracle_picker_greenfield_and_brownfield_without_typing_absolute_p
 
     page = browser.new_page(viewport={"width": 1440, "height": 900})
     expect = playwright.expect
-    page.goto(f"{url}/")
+    page.goto(f"{url}/?lang=zh")
 
     page.locator("#btn-issue-oracle").click()
     dialog = page.locator("#new-run-dialog")
@@ -396,7 +396,7 @@ def test_issue_oracle_picker_greenfield_and_brownfield_without_typing_absolute_p
     expect(card).to_be_visible()
     expect(card).to_have_attribute("data-mode", "greenfield")
 
-    workspaces = httpx.get(f"{url}/api/workspaces").json()["workspaces"]
+    workspaces = httpx.get(f"{url}/?lang=zh").json()["workspaces"]
     created_ws = next(ws for ws in workspaces if ws["name"] == "oracle-gf-app")
     assert created_ws["root_path"] == str(expected_gf)
     assert created_ws["is_git_repo"] is True

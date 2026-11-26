@@ -112,7 +112,7 @@ def test_goal_rereview_shows_permission_impact_after_live_update(workbench, brow
     ))
 
     page = browser.new_page()
-    page.goto(f"{url}/?run={run_id}")
+    page.goto(f"{url}/?run={run_id}&lang=zh")
     expect = playwright.expect
     expect(page.get_by_text("导出权限返审", exact=True).first).to_be_visible()
 
@@ -155,7 +155,7 @@ def test_legacy_rereview_shows_candidate_when_the_approved_original_is_missing(w
     RunStore(store.db_path)
 
     page = browser.new_page()
-    page.goto(f"{url}/?run={run_id}")
+    page.goto(f"{url}/?run={run_id}&lang=zh")
     expect = playwright.expect
     review = page.get_by_role("article", name="GoalSpec · v2")
     expect(review.get_by_text("缺少上次批准版本的可靠原文", exact=False)).to_be_visible()
@@ -200,7 +200,7 @@ def test_design_approval_shows_tradeoffs_and_reopens_review_after_conflict(workb
     )
     store.save_design(run_id, design)
     page = browser.new_page()
-    page.goto(f"{url}/?run={run_id}")
+    page.goto(f"{url}/?run={run_id}&lang=zh")
     expect = playwright.expect
     review = page.locator('[data-review-action="approve_design"]')
     expect(review.get_by_text("规格未记录结构化取舍", exact=False)).to_be_visible()
@@ -252,7 +252,7 @@ def test_design_approval_shows_tradeoffs_and_reopens_review_after_conflict(workb
         store.save_design(run_id, newer)
         route.continue_()
 
-    page.route(f"{url}/api/runs/{run_id}/command", supersede_before_command, times=1)
+    page.route(f"{url}/?lang=zh", supersede_before_command, times=1)
     with page.expect_response(
         lambda response: response.url.endswith("/command") and response.status == 409
     ):
@@ -318,7 +318,7 @@ def test_plan_review_explains_export_batches_and_opens_evidence(export_plan, bro
     _, run_id, url, plan = export_plan
     page = browser.new_page()
     expect = playwright.expect
-    page.goto(f"{url}/?run={run_id}")
+    page.goto(f"{url}/?run={run_id}&lang=zh")
 
     review = page.get_by_role("article", name="任务计划 · v1")
     batches = review.get_by_role("heading", name="交付批次（按任务依赖）").locator("..")
@@ -357,7 +357,7 @@ def test_plan_review_rejects_stale_approval_and_retains_approved_checks(export_p
     store, run_id, url, plan = export_plan
     page = browser.new_page()
     expect = playwright.expect
-    page.goto(f"{url}/?run={run_id}&nosse=1")
+    page.goto(f"{url}/?run={run_id}&nosse=1&lang=zh")
 
     old_review = page.get_by_role("article", name="任务计划 · v1")
     expect(old_review).to_be_visible()
@@ -369,7 +369,7 @@ def test_plan_review_rejects_stale_approval_and_retains_approved_checks(export_p
     })
     store.save_plan(run_id, revised)
 
-    endpoint = f"{url}/api/runs/{run_id}/command"
+    endpoint = f"{url}/?lang=zh"
     approve = page.get_by_role("button", name="批准任务计划", exact=True)
     with page.expect_response(endpoint) as stale:
         approve.click()
@@ -424,7 +424,7 @@ def test_design_and_plan_rereview_show_previous_tradeoff_and_dependency(export_p
     }))
 
     page = browser.new_page()
-    page.goto(f"{url}/?run={run_id}")
+    page.goto(f"{url}/?run={run_id}&lang=zh")
     expect = playwright.expect
     design_review = page.get_by_role("article", name="DesignSpec · v2")
     old_choice = design_review.get_by_text("选择：保留旧列", exact=True)
@@ -445,7 +445,7 @@ def test_plan_history_survives_task_graph_and_updates_over_sse(export_plan, brow
     store, _, url, plan = export_plan
     run_id = store.create_run(title="等待计划")
     page = browser.new_page()
-    page.goto(f"{url}/?run={run_id}")
+    page.goto(f"{url}/?run={run_id}&lang=zh")
     expect = playwright.expect
     expect(page.locator("#run-recent-progress")).to_have_text("最近确认 · 已接收编排请求")
     expect(page.locator("#stat-band")).to_be_empty()
@@ -475,9 +475,9 @@ def test_reconnect_keeps_last_confirmation_and_rejects_late_snapshot(workbench, 
     store, run_id, url = workbench
     context = browser.new_context()
     page = context.new_page()
-    snapshot_url = f"{url}/api/runs/{run_id}"
+    snapshot_url = f"{url}/?lang=zh"
     expect = playwright.expect
-    page.goto(f"{url}/?run={run_id}")
+    page.goto(f"{url}/?run={run_id}&lang=zh")
     time = page.locator("#run-progress-time")
     expect(time).to_be_visible()
     last_time = time.get_attribute("datetime")
@@ -530,7 +530,7 @@ def test_progress_motion_and_reading_position(workbench, browser, motion):
           return animation;
         };
     """)
-    page.goto(f"{url}/?run={run_id}")
+    page.goto(f"{url}/?run={run_id}&lang=zh")
     expect = playwright.expect
     expect(page.locator("#run-current-stage")).to_contain_text("有任务受阻")
     page.get_by_text("产物历史", exact=True).click()
@@ -571,12 +571,12 @@ def test_progress_motion_and_reading_position(workbench, browser, motion):
 def test_submit_feedback_precedes_http_response(workbench, browser):
     _, run_id, url = workbench
     page = browser.new_page()
-    page.goto(f"{url}/?run={run_id}")
+    page.goto(f"{url}/?run={run_id}&lang=zh")
     page.locator("#nav-oracle-board").click()
     page.locator("#btn-issue-oracle").click()
     page.get_by_label("需求原文").fill("检查提交反馈")
     held = []
-    page.route(f"{url}/api/runs", lambda route: held.append(route))
+    page.route(f"{url}/?lang=zh", lambda route: held.append(route))
     page.get_by_role("button", name="创建并启动").click()
     expect = playwright.expect
     expect(page.locator("#run-connection")).to_have_text("正在提交…")
@@ -601,7 +601,7 @@ def test_historical_execution_attempt_opens_recorded_patch(workbench, browser):
         payload={"task_id": "T03-R1", "lease_generation": 1},
     )
     page = browser.new_page()
-    page.goto(f"{url}/?run={run_id}")
+    page.goto(f"{url}/?run={run_id}&lang=zh")
     page.get_by_role("button", name="查看代码变更").click(timeout=2200)
     expect = playwright.expect
     expect(page.get_by_text("+recorded attempt one", exact=True)).to_be_visible()
@@ -628,7 +628,7 @@ def test_eventsource_error_reopens_from_snapshot(workbench, browser):
             route.continue_()
 
     page.route("**/stream?after_seq=*", close_first_stream)
-    page.goto(f"{url}/?run={run_id}")
+    page.goto(f"{url}/?run={run_id}&lang=zh")
     expect = playwright.expect
     expect(page.locator("#run-connection")).to_contain_text("正在重连")
     plan = store.get_run(run_id)["plan"]
@@ -779,7 +779,7 @@ def skip_dag(workbench):
 def test_task_dag_island_keeps_fixed_scale_and_routes_around_cards(skip_dag, browser):
     _, run_id, url = skip_dag
     page = browser.new_page(viewport={"width": 1600, "height": 1000})
-    page.goto(f"{url}/?run={run_id}")
+    page.goto(f"{url}/?run={run_id}&lang=zh")
     geo = _wait_for_layout(page)
     _assert_graph_stylesheet_applied(page)
     cards = {card["id"]: card for card in geo["cards"]}
@@ -839,7 +839,7 @@ def test_task_dag_island_separates_selection_from_critical_path(workbench, brows
     page = browser.new_page(viewport={"width": 1600, "height": 1000})
     errors = []
     page.on("pageerror", lambda error: errors.append(str(error)))
-    page.goto(f"{url}/?run={run_id}")
+    page.goto(f"{url}/?run={run_id}&lang=zh")
     expect = playwright.expect
     geo = _wait_for_layout(page)
     edges = {(edge["source"], edge["target"]): edge for edge in geo["edges"]}
@@ -907,7 +907,7 @@ def test_task_dag_island_separates_selection_from_critical_path(workbench, brows
 def test_task_dag_island_preserves_viewport_on_live_updates(workbench, browser):
     store, run_id, url = workbench
     page = browser.new_page(viewport={"width": 1600, "height": 1000})
-    page.goto(f"{url}/?run={run_id}")
+    page.goto(f"{url}/?run={run_id}&lang=zh")
     _wait_for_layout(page)
     host = page.locator("#dag-graph")
     viewport = host.locator(".react-flow__viewport")
@@ -1004,7 +1004,7 @@ def test_task_dag_shows_inline_titles_within_fixed_cards(workbench, browser):
 def test_task_dag_island_empty_cycle_fallback_and_missing_bundle(workbench, browser):
     _, run_id, url = workbench
     page = browser.new_page(viewport={"width": 1400, "height": 900})
-    page.goto(f"{url}/?run={run_id}")
+    page.goto(f"{url}/?run={run_id}&lang=zh")
     _wait_for_layout(page)
     _assert_graph_stylesheet_applied(page)
     expect = playwright.expect
@@ -1061,7 +1061,7 @@ def test_task_dag_island_empty_cycle_fallback_and_missing_bundle(workbench, brow
 
     broken = browser.new_page()
     broken.route("**/static/assets/ariadne-graph*.js", lambda route: route.abort())
-    broken.goto(f"{url}/?run={run_id}")
+    broken.goto(f"{url}/?run={run_id}&lang=zh")
     expect(broken.locator("#dag-graph")).to_contain_text("任务依赖图组件未能加载")
     expect(broken.locator("#workflow-graph[data-workflow-view='staged']")).to_be_visible()
     expect(broken.locator("#workflow-graph [data-workflow-node]")).to_have_count(10)
@@ -1081,7 +1081,7 @@ def test_task_dag_island_empty_cycle_fallback_and_missing_bundle(workbench, brow
     ):
         css_broken = browser.new_page()
         css_broken.route("**/static/assets/ariadne-graph*.css*", handler)
-        css_broken.goto(f"{url}/?run={run_id}")
+        css_broken.goto(f"{url}/?run={run_id}&lang=zh")
         expect(css_broken.locator("#dag-graph")).to_contain_text("任务依赖图组件未能加载")
         expect(css_broken.locator("#workflow-graph[data-workflow-view='staged']")).to_be_visible()
         assert css_broken.locator("#dag-graph .ag-island").count() == 0, label
@@ -1097,7 +1097,7 @@ def test_task_dag_island_empty_cycle_fallback_and_missing_bundle(workbench, brow
 
     stalled_css = browser.new_page()
     stalled_css.route("**/static/assets/ariadne-graph*.css*", lambda _route: None)
-    stalled_css.goto(f"{url}/?run={run_id}")
+    stalled_css.goto(f"{url}/?run={run_id}&lang=zh")
     expect(stalled_css.locator("#dag-graph")).to_contain_text(
         "ariadne-graph.css load timed out", timeout=7000
     )
@@ -1126,7 +1126,7 @@ def test_task_dag_island_empty_cycle_fallback_and_missing_bundle(workbench, brow
     )
     late_js.route(initial_js_re, lambda route: held_js.append(route))
     late_js.route(retry_css_re, lambda route: held_retry_css.append(route))
-    late_js.goto(f"{url}/?run={run_id}&nosse=1")
+    late_js.goto(f"{url}/?run={run_id}&nosse=1&lang=zh")
     _wait_for_intercepted(late_js, held_js)
     late_js.clock.fast_forward(20_500)
     expect(late_js.locator("#dag-graph")).to_contain_text(
@@ -1178,7 +1178,7 @@ def test_task_dag_bundle_slow_download_survives_stylesheet_timeout_and_retries_i
     held_slow_js = []
     initial_js_re = re.compile(r"/static/assets/ariadne-graph\.js$")
     slow.route(initial_js_re, lambda route: held_slow_js.append(route))
-    slow.goto(f"{url}/?run={run_id}&nosse=1")
+    slow.goto(f"{url}/?run={run_id}&nosse=1&lang=zh")
     slow.wait_for_function(
         "() => Array.from(document.querySelectorAll('link[rel=\"stylesheet\"]'))"
         ".some((node) => node.href.includes('ariadne-graph.css')"
@@ -1200,7 +1200,7 @@ def test_task_dag_bundle_slow_download_survives_stylesheet_timeout_and_retries_i
     timed_out.clock.install()
     stalled_js = []
     timed_out.route(initial_js_re, lambda route: stalled_js.append(route))
-    timed_out.goto(f"{url}/?run={run_id}&nosse=1")
+    timed_out.goto(f"{url}/?run={run_id}&nosse=1&lang=zh")
     timed_out.wait_for_function(
         "() => Array.from(document.querySelectorAll('link[rel=\"stylesheet\"]'))"
         ".some((node) => node.href.includes('ariadne-graph.css')"
@@ -1309,7 +1309,7 @@ def skipped_workflow(workbench):
 def test_staged_workflow_groups_phases_without_horizontal_overflow(workbench, browser):
     store, run_id, url = workbench
     page = browser.new_page(viewport={"width": 1600, "height": 1000})
-    page.goto(f"{url}/?run={run_id}")
+    page.goto(f"{url}/?run={run_id}&lang=zh")
     dag = _wait_for_layout(page)
     flow = _wait_for_workflow(page)
     cards = {card["id"]: card for card in flow["cards"]}
@@ -1342,7 +1342,7 @@ def test_staged_workflow_groups_phases_without_horizontal_overflow(workbench, br
     assert cards["align"]["marker"] != accent
 
     fast_id = store.create_run(title="快速补丁阶段适配", workflow_name="repo_fast_patch")
-    page.goto(f"{url}/?run={fast_id}")
+    page.goto(f"{url}/?run={fast_id}&lang=zh")
     fast_flow = _wait_for_workflow(page)
     assert [stage["id"] for stage in fast_flow["stages"]] == ["align", "plan", "execute"]
     assert "STAGE 01" in fast_flow["stages"][0]["text"]
@@ -1355,7 +1355,7 @@ def test_staged_workflow_groups_phases_without_horizontal_overflow(workbench, br
 def test_staged_workflow_marks_skipped_critic_and_shortcut_badge(skipped_workflow, browser):
     _, run_id, url = skipped_workflow
     page = browser.new_page(viewport={"width": 1440, "height": 900})
-    page.goto(f"{url}/?run={run_id}")
+    page.goto(f"{url}/?run={run_id}&lang=zh")
     flow = _wait_for_workflow(page)
     cards = {card["id"]: card for card in flow["cards"]}
     assert len(cards) == 11
@@ -1392,7 +1392,7 @@ def test_staged_workflow_selection_opens_dock_and_follows_dark_theme(skipped_wor
     page = browser.new_page(viewport={"width": 1440, "height": 900})
     errors = []
     page.on("pageerror", lambda error: errors.append(str(error)))
-    page.goto(f"{url}/?run={run_id}")
+    page.goto(f"{url}/?run={run_id}&lang=zh")
     _wait_for_workflow(page)
     expect = playwright.expect
     accent = _token(page, "--accent")
@@ -1445,7 +1445,7 @@ def test_staged_workflow_empty_unmapped_and_failed_state(workbench, browser):
     page = browser.new_page(viewport={"width": 1400, "height": 900})
     errors = []
     page.on("pageerror", lambda error: errors.append(str(error)))
-    page.goto(f"{url}/?run={run_id}")
+    page.goto(f"{url}/?run={run_id}&lang=zh")
     expect = playwright.expect
     host = page.locator("#workflow-graph")
     expect(host.get_by_text("当前工作流未提供拓扑描述", exact=True)).to_be_visible()
@@ -1464,7 +1464,7 @@ def test_staged_workflow_empty_unmapped_and_failed_state(workbench, browser):
         store.append_event(
             run_id=failed_id, stage="graph", event_type=event_type, actor="graph", payload=payload,
         )
-    page.goto(f"{url}/?run={failed_id}")
+    page.goto(f"{url}/?run={failed_id}&lang=zh")
     _wait_for_workflow(page)
     val_plan = page.locator("#workflow-graph [data-workflow-node='validate_plan']")
     expect(val_plan).to_have_attribute("data-status", "error")
@@ -1526,7 +1526,7 @@ def test_staged_workflow_custom_nodes_display_order_and_narrow_containers(workbe
         route.fulfill(response=resp)
 
     page.route(f"**/api/runs/{run_id}*", patch_custom_workflow)
-    page.goto(f"{url}/?run={run_id}")
+    page.goto(f"{url}/?run={run_id}&lang=zh")
     flow = _wait_for_workflow(page)
     by_stage = {stage["id"]: stage for stage in flow["stages"]}
     assert "design_spec_draft" in by_stage["design"]["nodes"]
@@ -1570,7 +1570,7 @@ def test_staged_workflow_custom_nodes_display_order_and_narrow_containers(workbe
         route.fulfill(response=resp)
 
     page.route(f"**/api/runs/{run_id}*", patch_two_stage)
-    page.goto(f"{url}/?run={run_id}")
+    page.goto(f"{url}/?run={run_id}&lang=zh")
     _wait_for_workflow(page)
     two_col_widths = page.locator("#workflow-graph").evaluate("""(host) => {
       host.style.width = '600px';
@@ -1603,7 +1603,7 @@ def test_graph_islands_scroll_safe_controls_and_readonly_cards(workbench, browse
     page = browser.new_page(viewport={"width": 1200, "height": 720})
     errors = []
     page.on("pageerror", lambda error: errors.append(str(error)))
-    page.goto(f"{url}/?run={run_id}")
+    page.goto(f"{url}/?run={run_id}&lang=zh")
     _wait_for_workflow(page)
     _wait_for_layout(page)
 
@@ -1678,7 +1678,7 @@ def test_graph_islands_hover_lineage_highlighting(skip_dag, browser):
     page = browser.new_page(viewport={"width": 1600, "height": 1000})
     errors = []
     page.on("pageerror", lambda error: errors.append(str(error)))
-    page.goto(f"{url}/?run={run_id}")
+    page.goto(f"{url}/?run={run_id}&lang=zh")
     expect = playwright.expect
     _wait_for_workflow(page)
     _wait_for_layout(page)
@@ -1758,7 +1758,7 @@ def test_task_dag_live_sse_status_update_preserves_zoom_and_pan_and_resets_on_ru
     ))
 
     page = browser.new_page(viewport={"width": 1600, "height": 1000})
-    page.goto(f"{url}/?run={run_id}")
+    page.goto(f"{url}/?run={run_id}&lang=zh")
     expect = playwright.expect
     _wait_for_layout(page)
     dag = page.locator("#dag-graph")
@@ -1835,7 +1835,7 @@ def test_task_dag_handles_arrow_ids_and_high_fanin_port_spacing(workbench, brows
     )
 
     page = browser.new_page(viewport={"width": 1600, "height": 1000})
-    page.goto(f"{url}/?run={run_id}")
+    page.goto(f"{url}/?run={run_id}&lang=zh")
     _wait_for_layout(page)
     rendered = page.locator("#dag-graph .ag-edge[data-edge-source]").evaluate_all(
         "els => els.map(el => [el.dataset.edgeSource, el.dataset.edgeTarget])"
@@ -1938,7 +1938,7 @@ def test_oracle_board_landing_columns_mode_filters_and_deep_link(workbench, brow
 
     page = browser.new_page(viewport={"width": 1440, "height": 900})
     expect = playwright.expect
-    page.goto(f"{url}/")
+    page.goto(f"{url}/?lang=zh")
 
     # Lands on L1 Oracle Board with 3 Ball-in-Court columns and data-god attributes.
     expect(page.locator("body")).to_have_attribute("data-surface", "board")
@@ -1958,7 +1958,7 @@ def test_oracle_board_landing_columns_mode_filters_and_deep_link(workbench, brow
     expect(page.locator(f".oracle-card[data-run-id='{archived_id}']")).to_have_count(0)
 
     # Sidebar pending-ruling badge reflects live human-held count.
-    pending_count = httpx.get(f"{url}/api/runs").json()["pending_ruling_total"]
+    pending_count = httpx.get(f"{url}/?lang=zh").json()["pending_ruling_total"]
     assert pending_count >= 1
     expect(page.locator("#nav-pending-badge")).to_have_text(str(pending_count))
 
@@ -1983,7 +1983,7 @@ def test_oracle_board_landing_columns_mode_filters_and_deep_link(workbench, brow
     expect(page.locator("#oracle-board-columns")).to_be_visible()
 
     # Legacy deep link (?run=<id>#design) lands directly in L2 Ariadne Cockpit with tab open.
-    page.goto(f"{url}/?run={demo_id}#design")
+    page.goto(f"{url}/?run={demo_id}&lang=zh#design")
     expect(page.locator("body")).to_have_attribute("data-surface", "oracle")
     expect(page.locator("#view-design")).to_be_visible()
     expect(page.locator(f"#open-tabs .ariadne-tab[data-run-id='{demo_id}']")).to_have_attribute(
@@ -2001,7 +2001,7 @@ def test_workspace_register_unregister_and_switching_preserves_cross_project_tab
     marker_file = second_repo / "README.md"
     marker_file.write_text("# voice-cli\n", encoding="utf-8")
 
-    default_ws = httpx.get(f"{url}/api/workspaces").json()["workspaces"][0]
+    default_ws = httpx.get(f"{url}/?lang=zh").json()["workspaces"][0]
     ws1_run = store.create_run(
         title="Default Repo Task",
         workspace_id=default_ws["workspace_id"],
@@ -2012,7 +2012,7 @@ def test_workspace_register_unregister_and_switching_preserves_cross_project_tab
 
     page = browser.new_page(viewport={"width": 1440, "height": 900})
     expect = playwright.expect
-    page.goto(f"{url}/")
+    page.goto(f"{url}/?lang=zh")
 
     # Open a Workspace 1 Oracle as an L2 Ariadne tab, then return to Oracle Board.
     page.locator(f".oracle-card[data-run-id='{ws1_run}'] .oracle-card-trigger").click()
@@ -2038,7 +2038,7 @@ def test_workspace_register_unregister_and_switching_preserves_cross_project_tab
     expect(dialog).to_be_hidden()
 
     # Seed a run bound to voice-cli and switch workspace filter to voice-cli.
-    workspaces = httpx.get(f"{url}/api/workspaces").json()["workspaces"]
+    workspaces = httpx.get(f"{url}/?lang=zh").json()["workspaces"]
     ws2 = next(item for item in workspaces if item["name"] == "voice-cli")
     ws2_run = store.create_run(
         title="Offline Voice Slicer",
@@ -2077,7 +2077,7 @@ def test_open_and_close_ariadne_tabs_persist_without_deleting_runs(workbench, br
 
     page = browser.new_page(viewport={"width": 1440, "height": 900})
     expect = playwright.expect
-    page.goto(f"{url}/")
+    page.goto(f"{url}/?lang=zh")
 
     # Seed a stale ID in localStorage alongside opening a real card.
     page.evaluate(
@@ -2121,10 +2121,10 @@ def test_live_board_sse_updates_pending_ruling_badge_while_on_l2_tab(workbench, 
 
     page = browser.new_page(viewport={"width": 1440, "height": 900})
     expect = playwright.expect
-    page.goto(f"{url}/?run={demo_id}")
+    page.goto(f"{url}/?run={demo_id}&lang=zh")
     expect(page.locator("body")).to_have_attribute("data-surface", "oracle")
 
-    initial_pending = httpx.get(f"{url}/api/runs").json()["pending_ruling_total"]
+    initial_pending = httpx.get(f"{url}/?lang=zh").json()["pending_ruling_total"]
     if initial_pending > 0:
         expect(page.locator("#nav-pending-badge")).to_have_text(str(initial_pending))
     else:

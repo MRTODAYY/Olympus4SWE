@@ -262,12 +262,12 @@ def test_pantheon_dock_renders_five_seats_in_order_with_live_states_and_workspac
     pantheon_server, browser
 ):
     store, primary_repo, tmp_path, url = pantheon_server
-    default_ws = httpx.get(f"{url}/api/workspaces").json()["workspaces"][0]
+    default_ws = httpx.get(f"{url}/?lang=zh").json()["workspaces"][0]
 
     second_repo = tmp_path / "voice-cli"
     second_repo.mkdir()
     ws2 = httpx.post(
-        f"{url}/api/workspaces",
+        f"{url}/?lang=zh",
         json={"name": "voice-cli", "root_path": str(second_repo)},
     ).json()["workspace"]
 
@@ -344,7 +344,7 @@ def test_pantheon_dock_renders_five_seats_in_order_with_live_states_and_workspac
 
     page = browser.new_page(viewport={"width": 1440, "height": 900})
     expect = playwright.expect
-    page.goto(f"{url}/")
+    page.goto(f"{url}/?lang=zh")
 
     dock = page.locator("#pantheon-dock")
     expect(dock).to_be_visible()
@@ -403,7 +403,7 @@ def test_pantheon_dock_renders_five_seats_in_order_with_live_states_and_workspac
 
 def test_pantheon_dock_click_and_hover_cross_column_highlight_and_clear(pantheon_server, browser):
     store, primary_repo, _, url = pantheon_server
-    default_ws = httpx.get(f"{url}/api/workspaces").json()["workspaces"][0]
+    default_ws = httpx.get(f"{url}/?lang=zh").json()["workspaces"][0]
 
     prom_human = _seed_oracle(
         store,
@@ -464,7 +464,7 @@ def test_pantheon_dock_click_and_hover_cross_column_highlight_and_clear(pantheon
 
     page = browser.new_page(viewport={"width": 1440, "height": 900})
     expect = playwright.expect
-    page.goto(f"{url}/")
+    page.goto(f"{url}/?lang=zh")
 
     prom_seat = page.locator("#pantheon-dock .pantheon-seat[data-god='prometheus']")
     heph_seat = page.locator("#pantheon-dock .pantheon-seat[data-god='hephaestus']")
@@ -518,7 +518,7 @@ def test_god_avatar_asset_slot_working_animation_reduced_motion_and_fallback(
     pantheon_server, browser
 ):
     store, primary_repo, _, url = pantheon_server
-    default_ws = httpx.get(f"{url}/api/workspaces").json()["workspaces"][0]
+    default_ws = httpx.get(f"{url}/?lang=zh").json()["workspaces"][0]
 
     _seed_oracle(
         store,
@@ -574,7 +574,7 @@ def test_god_avatar_asset_slot_working_animation_reduced_motion_and_fallback(
         },
     }
     page.add_init_script(f"window.__OLYMPUS_AVATAR_MANIFEST__ = {json.dumps(manifest)};")
-    page.goto(f"{url}/")
+    page.goto(f"{url}/?lang=zh")
 
     prom_avatar = page.locator("#pantheon-dock .pantheon-seat[data-god='prometheus'] .god-avatar")
     heph_avatar = page.locator("#pantheon-dock .pantheon-seat[data-god='hephaestus'] .god-avatar")
@@ -623,7 +623,7 @@ def test_god_avatar_asset_slot_working_animation_reduced_motion_and_fallback(
 
 def test_pantheon_dock_updates_live_via_board_sse(pantheon_server, browser):
     store, primary_repo, _, url = pantheon_server
-    default_ws = httpx.get(f"{url}/api/workspaces").json()["workspaces"][0]
+    default_ws = httpx.get(f"{url}/?lang=zh").json()["workspaces"][0]
 
     live_run = _seed_oracle(
         store,
@@ -636,7 +636,7 @@ def test_pantheon_dock_updates_live_via_board_sse(pantheon_server, browser):
 
     page = browser.new_page(viewport={"width": 1440, "height": 900})
     expect = playwright.expect
-    page.goto(f"{url}/")
+    page.goto(f"{url}/?lang=zh")
 
     prom_seat = page.locator("#pantheon-dock .pantheon-seat[data-god='prometheus']")
     expect(prom_seat).to_have_attribute("data-state", "working")
