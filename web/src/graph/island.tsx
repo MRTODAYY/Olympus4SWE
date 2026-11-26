@@ -3,6 +3,7 @@ import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
 import { ReactFlowProvider } from "@xyflow/react";
 
+import { I18nProvider } from "../i18n";
 import type { GraphIslandHandle } from "./types";
 
 /** Imperative hooks a mounted graph registers so the host handle can drive it. */
@@ -42,10 +43,16 @@ export function createIsland<P extends object>(
   let destroyed = false;
 
   const render = (props: P): void => {
+    // An island is its own React root, so it carries its own i18n provider: without one every
+    // `useT()` inside the graph throws and the island renders nothing. The console's tree has
+    // the app-level provider, but `mountDag` from raw props (diagnostics, Playwright seams)
+    // renders outside it.
     const tree = (
-      <ReactFlowProvider>
-        <Component {...props} controller={controller} />
-      </ReactFlowProvider>
+      <I18nProvider>
+        <ReactFlowProvider>
+          <Component {...props} controller={controller} />
+        </ReactFlowProvider>
+      </I18nProvider>
     );
     if (dispatchDepth > 0) root.render(tree);
     else flushSync(() => root.render(tree));
