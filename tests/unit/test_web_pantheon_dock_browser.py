@@ -262,12 +262,12 @@ def test_pantheon_dock_renders_five_seats_in_order_with_live_states_and_workspac
     pantheon_server, browser
 ):
     store, primary_repo, tmp_path, url = pantheon_server
-    default_ws = httpx.get(f"{url}/?lang=zh").json()["workspaces"][0]
+    default_ws = httpx.get(f"{url}/api/workspaces").json()["workspaces"][0]
 
     second_repo = tmp_path / "voice-cli"
     second_repo.mkdir()
     ws2 = httpx.post(
-        f"{url}/?lang=zh",
+        f"{url}/api/workspaces",
         json={"name": "voice-cli", "root_path": str(second_repo)},
     ).json()["workspace"]
 
@@ -403,7 +403,7 @@ def test_pantheon_dock_renders_five_seats_in_order_with_live_states_and_workspac
 
 def test_pantheon_dock_click_and_hover_cross_column_highlight_and_clear(pantheon_server, browser):
     store, primary_repo, _, url = pantheon_server
-    default_ws = httpx.get(f"{url}/?lang=zh").json()["workspaces"][0]
+    default_ws = httpx.get(f"{url}/api/workspaces").json()["workspaces"][0]
 
     prom_human = _seed_oracle(
         store,
@@ -518,7 +518,7 @@ def test_god_avatar_asset_slot_working_animation_reduced_motion_and_fallback(
     pantheon_server, browser
 ):
     store, primary_repo, _, url = pantheon_server
-    default_ws = httpx.get(f"{url}/?lang=zh").json()["workspaces"][0]
+    default_ws = httpx.get(f"{url}/api/workspaces").json()["workspaces"][0]
 
     _seed_oracle(
         store,
@@ -623,7 +623,7 @@ def test_god_avatar_asset_slot_working_animation_reduced_motion_and_fallback(
 
 def test_pantheon_dock_updates_live_via_board_sse(pantheon_server, browser):
     store, primary_repo, _, url = pantheon_server
-    default_ws = httpx.get(f"{url}/?lang=zh").json()["workspaces"][0]
+    default_ws = httpx.get(f"{url}/api/workspaces").json()["workspaces"][0]
 
     live_run = _seed_oracle(
         store,

@@ -252,7 +252,7 @@ def test_design_approval_shows_tradeoffs_and_reopens_review_after_conflict(workb
         store.save_design(run_id, newer)
         route.continue_()
 
-    page.route(f"{url}/?lang=zh", supersede_before_command, times=1)
+    page.route(f"{url}/api/runs/{run_id}/command", supersede_before_command, times=1)
     with page.expect_response(
         lambda response: response.url.endswith("/command") and response.status == 409
     ):
@@ -369,7 +369,7 @@ def test_plan_review_rejects_stale_approval_and_retains_approved_checks(export_p
     })
     store.save_plan(run_id, revised)
 
-    endpoint = f"{url}/?lang=zh"
+    endpoint = f"{url}/api/runs/{run_id}/command"
     approve = page.get_by_role("button", name="批准任务计划", exact=True)
     with page.expect_response(endpoint) as stale:
         approve.click()
@@ -475,7 +475,7 @@ def test_reconnect_keeps_last_confirmation_and_rejects_late_snapshot(workbench, 
     store, run_id, url = workbench
     context = browser.new_context()
     page = context.new_page()
-    snapshot_url = f"{url}/?lang=zh"
+    snapshot_url = f"{url}/api/runs/{run_id}"
     expect = playwright.expect
     page.goto(f"{url}/?run={run_id}&lang=zh")
     time = page.locator("#run-progress-time")
@@ -576,7 +576,7 @@ def test_submit_feedback_precedes_http_response(workbench, browser):
     page.locator("#btn-issue-oracle").click()
     page.get_by_label("需求原文").fill("检查提交反馈")
     held = []
-    page.route(f"{url}/?lang=zh", lambda route: held.append(route))
+    page.route(f"{url}/api/runs", lambda route: held.append(route))
     page.get_by_role("button", name="创建并启动").click()
     expect = playwright.expect
     expect(page.locator("#run-connection")).to_have_text("正在提交…")
@@ -1958,7 +1958,7 @@ def test_oracle_board_landing_columns_mode_filters_and_deep_link(workbench, brow
     expect(page.locator(f".oracle-card[data-run-id='{archived_id}']")).to_have_count(0)
 
     # Sidebar pending-ruling badge reflects live human-held count.
-    pending_count = httpx.get(f"{url}/?lang=zh").json()["pending_ruling_total"]
+    pending_count = httpx.get(f"{url}/api/runs").json()["pending_ruling_total"]
     assert pending_count >= 1
     expect(page.locator("#nav-pending-badge")).to_have_text(str(pending_count))
 
@@ -2001,7 +2001,7 @@ def test_workspace_register_unregister_and_switching_preserves_cross_project_tab
     marker_file = second_repo / "README.md"
     marker_file.write_text("# voice-cli\n", encoding="utf-8")
 
-    default_ws = httpx.get(f"{url}/?lang=zh").json()["workspaces"][0]
+    default_ws = httpx.get(f"{url}/api/workspaces").json()["workspaces"][0]
     ws1_run = store.create_run(
         title="Default Repo Task",
         workspace_id=default_ws["workspace_id"],
@@ -2038,7 +2038,7 @@ def test_workspace_register_unregister_and_switching_preserves_cross_project_tab
     expect(dialog).to_be_hidden()
 
     # Seed a run bound to voice-cli and switch workspace filter to voice-cli.
-    workspaces = httpx.get(f"{url}/?lang=zh").json()["workspaces"]
+    workspaces = httpx.get(f"{url}/api/workspaces").json()["workspaces"]
     ws2 = next(item for item in workspaces if item["name"] == "voice-cli")
     ws2_run = store.create_run(
         title="Offline Voice Slicer",
@@ -2124,7 +2124,7 @@ def test_live_board_sse_updates_pending_ruling_badge_while_on_l2_tab(workbench, 
     page.goto(f"{url}/?run={demo_id}&lang=zh")
     expect(page.locator("body")).to_have_attribute("data-surface", "oracle")
 
-    initial_pending = httpx.get(f"{url}/?lang=zh").json()["pending_ruling_total"]
+    initial_pending = httpx.get(f"{url}/api/runs").json()["pending_ruling_total"]
     if initial_pending > 0:
         expect(page.locator("#nav-pending-badge")).to_have_text(str(initial_pending))
     else:

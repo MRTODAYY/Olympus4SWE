@@ -396,7 +396,7 @@ def test_issue_oracle_picker_greenfield_and_brownfield_without_typing_absolute_p
     expect(card).to_be_visible()
     expect(card).to_have_attribute("data-mode", "greenfield")
 
-    workspaces = httpx.get(f"{url}/?lang=zh").json()["workspaces"]
+    workspaces = httpx.get(f"{url}/api/workspaces").json()["workspaces"]
     created_ws = next(ws for ws in workspaces if ws["name"] == "oracle-gf-app")
     assert created_ws["root_path"] == str(expected_gf)
     assert created_ws["is_git_repo"] is True

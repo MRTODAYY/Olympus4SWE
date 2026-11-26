@@ -112,7 +112,7 @@ def test_issue_oracle_modal_scoped_creation_and_error_resilience(
     board_server, browser, tmp_path: Path
 ):
     store, workspace, url = board_server
-    default_ws = httpx.get(f"{url}/?lang=zh").json()["workspaces"][0]
+    default_ws = httpx.get(f"{url}/api/workspaces").json()["workspaces"][0]
 
     populated_dir = tmp_path / "already-populated"
     populated_dir.mkdir()
@@ -208,7 +208,7 @@ def test_issue_oracle_modal_scoped_creation_and_error_resilience(
     gf_card = page.locator(f".oracle-card[data-run-id='{greenfield_run_id}']")
     expect(gf_card).to_be_visible()
     expect(gf_card).to_have_attribute("data-mode", "greenfield")
-    ws_names = [ws["name"] for ws in httpx.get(f"{url}/?lang=zh").json()["workspaces"]]
+    ws_names = [ws["name"] for ws in httpx.get(f"{url}/api/workspaces").json()["workspaces"]]
     assert "voice-cli-new" in ws_names
 
     page.locator("#workspace-switcher").select_option("")
@@ -478,7 +478,7 @@ def test_quick_ruling_drawer_clarify_approve_conflict_resync_without_opening_tab
         expect(page.locator("#open-tabs .ariadne-tab")).to_have_count(1)
 
         drawer.get_by_role("button", name="SQLite table", exact=True).click()
-        with page.expect_response(f"{url}/?lang=zh") as clarify_res:
+        with page.expect_response(f"{url}/api/runs/{clarify_id}/command") as clarify_res:
             drawer.locator("#btn-clarify-submit").click()
         assert clarify_res.value.status == 200
         expect(drawer).to_be_hidden()
@@ -491,7 +491,7 @@ def test_quick_ruling_drawer_clarify_approve_conflict_resync_without_opening_tab
         spec_cta.click()
         expect(drawer).to_be_visible()
         expect(drawer.locator("[data-review-action='approve_spec']")).to_be_visible()
-        with page.expect_response(f"{url}/?lang=zh") as spec_res:
+        with page.expect_response(f"{url}/api/runs/{spec_id}/command") as spec_res:
             drawer.locator("[data-approve='approve_spec']").click()
         assert spec_res.value.status == 200
         expect(drawer).to_be_hidden()
@@ -525,15 +525,15 @@ def test_quick_ruling_drawer_clarify_approve_conflict_resync_without_opening_tab
             store.save_plan(plan_id, plan_v2)
             route.continue_()
 
-        page.route(f"{url}/?lang=zh", bump_before_approve, times=1)
-        with page.expect_response(f"{url}/?lang=zh") as stale_res:
+        page.route(f"{url}/api/runs/{plan_id}/command", bump_before_approve, times=1)
+        with page.expect_response(f"{url}/api/runs/{plan_id}/command") as stale_res:
             drawer.locator("[data-approve='approve_plan']").click()
         assert stale_res.value.status == 409
         expect(drawer).to_be_visible()
         expect(drawer.locator("#quick-drawer-notice")).to_contain_text("请确认后重试")
         expect(drawer.get_by_role("heading", name="任务计划 · v2")).to_be_visible()
 
-        with page.expect_response(f"{url}/?lang=zh") as fresh_res:
+        with page.expect_response(f"{url}/api/runs/{plan_id}/command") as fresh_res:
             drawer.locator("[data-approve='approve_plan']").click()
         assert fresh_res.value.status == 200
         expect(drawer).to_be_hidden()
@@ -581,7 +581,7 @@ def test_quick_ruling_drawer_blocker_resolution_and_open_cockpit_escape_hatch(
     drawer = page.locator("#quick-ruling-drawer")
     expect(drawer).to_be_visible()
     expect(drawer.locator("#quick-drawer-blocker")).to_be_visible()
-    with page.expect_response(f"{url}/?lang=zh") as retry_res:
+    with page.expect_response(f"{url}/api/runs/{blocked_id}/command") as retry_res:
         drawer.locator("#btn-drawer-blocker-retry").click()
     assert retry_res.value.status == 200
     expect(drawer).to_be_hidden()
