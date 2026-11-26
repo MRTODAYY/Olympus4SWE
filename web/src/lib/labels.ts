@@ -9,6 +9,8 @@ import type {
   WorkflowView,
   WorkspaceMode,
 } from "../api/types";
+import { localized } from "../i18n/localized";
+import { tr } from "../i18n/translate";
 
 export const VIEWS = ["topology", "design", "matrix", "waterfall"] as const;
 export type View = (typeof VIEWS)[number];
@@ -27,36 +29,40 @@ export interface StatusMeta {
   glyph: string;
 }
 
-export const MATURITY_LABELS: Record<string, string> = {
+/**
+ * Copy tables in this module are wrapped with `localized()`, so every read is
+ * translated at access time — call sites keep using `TABLE[key]` unchanged.
+ */
+export const MATURITY_LABELS = localized<Record<string, string>>({
   raw_intent: "原始意图",
   goal_spec_ready: "GoalSpec 就绪",
   design_spec_ready: "DesignSpec 就绪",
-};
+});
 
-export const RETRY_MESSAGE = "调用超时，正在自动重试";
-export const RETRY_NEXT_STEP = "等待本次调用返回";
+export const retryMessage = (): string => tr("调用超时，正在自动重试");
+export const retryNextStep = (): string => tr("等待本次调用返回");
 
-export const WORKFLOW_LABELS: Record<string, string> = {
+export const WORKFLOW_LABELS = localized<Record<string, string>>({
   product_blueprint: "产品蓝图",
   full_sdlc_tdd: "全流程 TDD",
   repo_fast_patch: "快速补丁",
-};
+});
 
-export const WORKFLOW_SELECT_LABELS: Record<string, string> = {
+export const WORKFLOW_SELECT_LABELS = localized<Record<string, string>>({
   product_blueprint: "product_blueprint · 产品蓝图（仅规划，不写代码）",
   full_sdlc_tdd: "full_sdlc_tdd · 全流程研发（含沙盒写代码 + 验收）",
   repo_fast_patch: "repo_fast_patch · 快速补丁（跳过架构直改代码）",
-};
+});
 
-export const WORKFLOW_SUMMARY: Record<string, string> = {
+export const WORKFLOW_SUMMARY = localized<Record<string, string>>({
   product_blueprint:
     "需求对齐 → 白盒架构 → Wave 0/1/2 任务拆解后结束；含 3 道人工关口，不写仓库代码。",
   full_sdlc_tdd:
     "需求对齐 → 白盒架构 → 任务拆解 → 隔离沙盒并发写代码与冷启动验收；含 3 道人工关口。",
   repo_fast_patch: "跳过白盒架构，基于 GoalSpec 拆解后直接改代码并验收；人工关口全自动放行。",
-};
+});
 
-export const NODE_LABELS: Record<string, string> = {
+export const NODE_LABELS = localized<Record<string, string>>({
   intake: "输入分流",
   align: "需求对齐",
   critic: "多维评审",
@@ -68,9 +74,9 @@ export const NODE_LABELS: Record<string, string> = {
   validate_plan: "计划校验",
   gate_plan: "计划确认",
   execute: "并发执行",
-};
+});
 
-export const WORKFLOW_STATUS_TEXT: Record<string, string> = {
+export const WORKFLOW_STATUS_TEXT = localized<Record<string, string>>({
   completed: "✓ 已完成",
   running: "▶ 运行中",
   paused: "◷ 待确认",
@@ -78,35 +84,35 @@ export const WORKFLOW_STATUS_TEXT: Record<string, string> = {
   error: "✕ 中断/阻塞",
   skipped: "— 已跳过",
   pending: "◷ 等待",
-};
+});
 
-export const APPROVAL_LABELS = {
+export const APPROVAL_LABELS = localized({
   approve_spec: "GoalSpec",
   approve_design: "DesignSpec",
   approve_plan: "任务计划",
-} as const;
+} as const);
 
-export const APPROVAL_BUTTONS = {
+export const APPROVAL_BUTTONS = localized({
   approve_spec: { id: "btn-approve-spec", label: "批准 GoalSpec 进入架构设计" },
   approve_design: { id: "btn-approve-design", label: "批准 DesignSpec 启动任务分解" },
   approve_plan: { id: "btn-approve-plan", label: "批准任务计划" },
-} as const;
+} as const);
 
-export const OUTPUT_ACTIONS: Record<string, string> = {
+export const OUTPUT_ACTIONS = localized<Record<string, string>>({
   spec: "查看 GoalSpec",
   design: "查看 DesignSpec",
   plan: "查看任务依赖图",
   execution: "查看代码变更",
   verification: "查看验收证据",
-};
+});
 
-export const DELIVERY_STATUS: Record<string, [string, Variant]> = {
+export const DELIVERY_STATUS = localized<Record<string, [string, Variant]>>({
   passed: ["✓ 通过", "ok"],
   failed: ["✕ 失败", "bad"],
   unverified: ["◷ 未验证", "muted"],
-};
+});
 
-export const POST_DAG_STATUS: Record<string, [string, Variant]> = {
+export const POST_DAG_STATUS = localized<Record<string, [string, Variant]>>({
   idle: ["◷ 待验证", "muted"],
   verifying: ["▶ 验证中", "live"],
   repairing: ["▶ 定向修复中", "live"],
@@ -114,26 +120,26 @@ export const POST_DAG_STATUS: Record<string, [string, Variant]> = {
   paused: ["◷ 已暂停", "warn"],
   failed: ["✕ 交付未通过", "bad"],
   awaiting_human: ["⚠ 待人工裁决", "warn"],
-};
+});
 
-export const POST_DAG_PHASE: Record<string, string> = {
+export const POST_DAG_PHASE = localized<Record<string, string>>({
   verify: "实机验证",
   recheck: "复现复检",
   review: "Argus 复核",
   repair: "定向修复",
-};
+});
 
-export const POST_DAG_OUTCOME: Record<string, [string, Variant]> = {
+export const POST_DAG_OUTCOME = localized<Record<string, [string, Variant]>>({
   passed: ["✓ 通过", "ok"],
   applied: ["✓ 已应用", "ok"],
   completed: ["✓ 已完成", "ok"],
   failed: ["✕ 失败", "bad"],
   rejected: ["✕ 已拒绝", "bad"],
-};
+});
 
 export function formatDurationMs(durationMs: number | null | undefined): string {
   const value = Number(durationMs) || 0;
-  if (value <= 0) return "未记录耗时";
+  if (value <= 0) return tr("未记录耗时");
   if (value >= 1000) return `${(value / 1000).toFixed(1)} s`;
   return `${value} ms`;
 }
@@ -143,25 +149,25 @@ export const LIVE_TASK_STATUSES = new Set(["running", "verifying"]);
 export function localizeTriageReason(text: string): string {
   const raw = String(text || "").trim();
   if (raw.startsWith("Free-form intent without frozen requirements")) {
-    return "输入为自然语言描述，尚未冻结可验收需求、模块边界或接口契约。";
+    return tr("输入为自然语言描述，尚未冻结可验收需求、模块边界或接口契约。");
   }
   if (raw.startsWith("Stage 1 Align must synthesize an EARS GoalSpec")) {
-    return "需先经 Stage 1 需求对齐生成 EARS GoalSpec，再进入白盒架构设计。";
+    return tr("需先经 Stage 1 需求对齐生成 EARS GoalSpec，再进入白盒架构设计。");
   }
   if (raw.startsWith("Input describes WHAT the product must do")) {
-    return "已明确业务目标（What），待 Stage 2a 补齐模块路径、数据归属与接口接缝（How）。";
+    return tr("已明确业务目标（What），待 Stage 2a 补齐模块路径、数据归属与接口接缝（How）。");
   }
   if (raw.startsWith("No interface contracts")) {
-    return "缺少明确的模块间接口签名与异常分支契约。";
+    return tr("缺少明确的模块间接口签名与异常分支契约。");
   }
   if (raw.startsWith("No data ownership map")) {
-    return "缺少数据实体及其唯一所属模块的归属映射。";
+    return tr("缺少数据实体及其唯一所属模块的归属映射。");
   }
   if (raw.startsWith("GoalSpec passed deterministic validation")) {
-    return "输入已达到 GoalSpec 就绪标准，可直接跨过澄清进入白盒架构设计。";
+    return tr("输入已达到 GoalSpec 就绪标准，可直接跨过澄清进入白盒架构设计。");
   }
   if (raw.startsWith("DesignSpec passed deterministic validation")) {
-    return "输入已达到完整 DesignSpec 标准，可直接进入任务分解（PM Decompose）。";
+    return tr("输入已达到完整 DesignSpec 标准，可直接进入任务分解（PM Decompose）。");
   }
   return raw;
 }
@@ -170,52 +176,55 @@ export function localizeError(text: string | null | undefined): string {
   const raw = String(text || "").trim();
   if (!raw) return "";
   if (/read operation timed out|ReadTimeout/i.test(raw)) {
-    return `模型接口读取超时（已将默认超时阈值提升至 300s，可直接点击“从断点重试”继续）· ${raw}`;
+    return tr(
+      "模型接口读取超时（已将默认超时阈值提升至 300s，可直接点击“从断点重试”继续）· {raw}",
+      { raw },
+    );
   }
   if (/provider_error/i.test(raw)) {
-    return `模型调用异常（可检查提供方配置后点击“从断点重试”）· ${raw}`;
+    return tr("模型调用异常（可检查提供方配置后点击“从断点重试”）· {raw}", { raw });
   }
   return raw;
 }
 
 export function statusMeta(status: string | null | undefined, riskReason?: string | null): StatusMeta {
-  if (riskReason) return { label: "未验证 · 人工接受", variant: "warn", glyph: "⚠" };
+  if (riskReason) return { label: tr("未验证 · 人工接受"), variant: "warn", glyph: "⚠" };
   switch (status) {
     case "accepted":
     case "verified":
     case "done":
-      return { label: "已验收", variant: "ok", glyph: "✓" };
+      return { label: tr("已验收"), variant: "ok", glyph: "✓" };
     case "completed":
-      return { label: "已完成", variant: "ok", glyph: "✓" };
+      return { label: tr("已完成"), variant: "ok", glyph: "✓" };
     case "running":
-      return { label: "运行中", variant: "live", glyph: "▶" };
+      return { label: tr("运行中"), variant: "live", glyph: "▶" };
     case "aligning":
-      return { label: "对齐中", variant: "live", glyph: "▶" };
+      return { label: tr("对齐中"), variant: "live", glyph: "▶" };
     case "designing":
-      return { label: "设计中", variant: "live", glyph: "▶" };
+      return { label: tr("设计中"), variant: "live", glyph: "▶" };
     case "planning":
-      return { label: "分解中", variant: "live", glyph: "▶" };
+      return { label: tr("分解中"), variant: "live", glyph: "▶" };
     case "awaiting_human":
-      return { label: "待人工", variant: "warn", glyph: "⚠" };
+      return { label: tr("待人工"), variant: "warn", glyph: "⚠" };
     case "created":
-      return { label: "已创建", variant: "muted", glyph: "◷" };
+      return { label: tr("已创建"), variant: "muted", glyph: "◷" };
     case "verifying":
-      return { label: "待验收", variant: "live", glyph: "▶" };
+      return { label: tr("待验收"), variant: "live", glyph: "▶" };
     case "blocked":
-      return { label: "阻塞", variant: "bad", glyph: "✕" };
+      return { label: tr("阻塞"), variant: "bad", glyph: "✕" };
     case "failed":
     case "error":
-      return { label: "失败", variant: "bad", glyph: "✕" };
+      return { label: tr("失败"), variant: "bad", glyph: "✕" };
     case "paused":
-      return { label: "已暂停", variant: "warn", glyph: "◷" };
+      return { label: tr("已暂停"), variant: "warn", glyph: "◷" };
     case "ready":
-      return { label: "就绪", variant: "muted", glyph: "◷" };
+      return { label: tr("就绪"), variant: "muted", glyph: "◷" };
     case "cancelled":
-      return { label: "已取消", variant: "muted", glyph: "◷" };
+      return { label: tr("已取消"), variant: "muted", glyph: "◷" };
     case "planned":
-      return { label: "蓝图已定稿", variant: "muted", glyph: "✓" };
+      return { label: tr("蓝图已定稿"), variant: "muted", glyph: "✓" };
     default:
-      return { label: "等待", variant: "muted", glyph: "◷" };
+      return { label: tr("等待"), variant: "muted", glyph: "◷" };
   }
 }
 
@@ -236,46 +245,52 @@ export function workflowCurrentNode(workflow: Partial<WorkflowView>): string | n
   return workflow.current_node || workflow.failed_node || workflow.paused?.node || null;
 }
 
+const PROGRESS_LABELS = localized<Record<string, string>>({
+  "run.created": "已接收编排请求",
+  "intake.triaged": "输入分流完成",
+  "spec.clarified": "已记录澄清回答",
+  "approval.recorded": "已记录人工决定",
+  "graph.node_started": "开始{node}",
+  "graph.node_finished": "{node}完成",
+  "graph.paused": "{node}等待继续",
+  "graph.failed": "{node}执行中断",
+  "graph.finished": "工作流完成",
+  "run.status_changed": "运行状态更新为{status}",
+  "run.workflow_promoted": "已切换为全流程执行",
+  "task.requeued": "{task_id} 已重新排队",
+  "task.blocked": "{task_id} 受阻",
+  "task.accepted": "{task_id} 已验收",
+  "task.accepted_with_risk": "{task_id} 保留未验证状态，已人工接受风险",
+  "spec.clarification_note": "已补充澄清说明",
+  "spec.resynthesized": "已按澄清重新合成需求规格",
+  "spec.resynthesis_failed": "需求融合失败，可原地重试",
+  "run.revision_requested": "已请求修订当前交付",
+  "run.reopened": "运行已重新打开",
+  "task.ephemeral_artifacts_cleaned": "{task_id} 临时产物已清理",
+  "task.diff_gate_rejected": "{task_id} 变更越界被拦截",
+  "task.escape_hatch_rejected": "{task_id} 逃逸语句被拦截",
+  "task.review_deferred": "{task_id} 独立复核延后至交付验收",
+  "task.deferred_review_passed": "{task_id} 延后复核已通过",
+  "review.verdict_verified": "{task_id} 审查结论已核验",
+  "review.repro_rechecked": "{task_id} 复现命令已复检",
+  "review.repro_commands_cleared": "{task_id} 复现命令已清除",
+  "product.verified": "产品端到端验证完成",
+  "post_dag.repro_rechecked": "交付后复现命令已复检",
+  "post_dag.repair_turn_completed": "交付修复轮次完成",
+  "post_dag.repair_applied": "交付修复已应用",
+  "post_dag.repair_rejected": "交付修复被拒绝",
+});
+
 export function progressText(event: RunProgressItem | null | undefined): string {
-  if (!event) return "等待首条运行记录";
+  if (!event) return tr("等待首条运行记录");
   if (event.summary) return event.summary;
-  const node = (event.node && NODE_LABELS[event.node]) || event.node || "工作流";
-  const labels: Record<string, string> = {
-    "run.created": "已接收编排请求",
-    "intake.triaged": "输入分流完成",
-    "spec.clarified": "已记录澄清回答",
-    "approval.recorded": "已记录人工决定",
-    "graph.node_started": `开始${node}`,
-    "graph.node_finished": `${node}完成`,
-    "graph.paused": `${node}等待继续`,
-    "graph.failed": `${node}执行中断`,
-    "graph.finished": "工作流完成",
-    "run.status_changed": `运行状态更新为${statusMeta(event.to).label}`,
-    "run.workflow_promoted": "已切换为全流程执行",
-    "task.requeued": `${event.task_id} 已重新排队`,
-    "task.blocked": `${event.task_id} 受阻`,
-    "task.accepted": `${event.task_id} 已验收`,
-    "task.accepted_with_risk": `${event.task_id} 保留未验证状态，已人工接受风险`,
-    "spec.clarification_note": "已补充澄清说明",
-    "spec.resynthesized": "已按澄清重新合成需求规格",
-    "spec.resynthesis_failed": "需求融合失败，可原地重试",
-    "run.revision_requested": "已请求修订当前交付",
-    "run.reopened": "运行已重新打开",
-    "task.ephemeral_artifacts_cleaned": `${event.task_id} 临时产物已清理`,
-    "task.diff_gate_rejected": `${event.task_id} 变更越界被拦截`,
-    "task.escape_hatch_rejected": `${event.task_id} 逃逸语句被拦截`,
-    "task.review_deferred": `${event.task_id} 独立复核延后至交付验收`,
-    "task.deferred_review_passed": `${event.task_id} 延后复核已通过`,
-    "review.verdict_verified": `${event.task_id} 审查结论已核验`,
-    "review.repro_rechecked": `${event.task_id} 复现命令已复检`,
-    "review.repro_commands_cleared": `${event.task_id} 复现命令已清除`,
-    "product.verified": "产品端到端验证完成",
-    "post_dag.repro_rechecked": "交付后复现命令已复检",
-    "post_dag.repair_turn_completed": "交付修复轮次完成",
-    "post_dag.repair_applied": "交付修复已应用",
-    "post_dag.repair_rejected": "交付修复被拒绝",
-  };
-  return labels[event.event_type] || "已记录运行更新";
+  const node = (event.node && NODE_LABELS[event.node]) || event.node || tr("工作流");
+  const template = PROGRESS_LABELS[event.event_type] || "已记录运行更新";
+  return tr(template, {
+    node,
+    task_id: event.task_id || "",
+    status: statusMeta(event.to).label,
+  });
 }
 
 export interface CurrentStage {
@@ -296,9 +311,9 @@ export function currentStage(projection: RunProjection): CurrentStage {
   const name = (node && NODE_LABELS[node]) || node || stage?.label || statusMeta(projection.status).label;
   const label =
     projection.hitl_banner?.kind === "task_blocked"
-      ? `${name} · 有任务受阻`
+      ? `${name}${tr(" · 有任务受阻")}`
       : projection.status === "failed"
-        ? `${name} · 执行中断`
+        ? `${name}${tr(" · 执行中断")}`
         : name;
   return { key: node || stage?.id || projection.status, label };
 }
@@ -349,28 +364,28 @@ export function taskBlocker(projection: RunProjection | null, selectedTaskId: st
   return selected?.blocker || banner;
 }
 
-export const WORKSPACE_MODE_LABELS: Record<WorkspaceMode, string> = {
+export const WORKSPACE_MODE_LABELS = localized<Record<WorkspaceMode, string>>({
   brownfield: "Brownfield",
   greenfield: "Greenfield",
   spec_only: "Spec-Only",
-};
+});
 
-export const TASK_TYPE_LABELS: Record<TaskType, string> = {
+export const TASK_TYPE_LABELS = localized<Record<TaskType, string>>({
   feature: "Feature",
   fix: "Fix",
   refactor: "Refactor",
   blueprint: "Blueprint",
-};
+});
 
-export const GOD_META: Record<PantheonGod, { name: string; role: string; monogram: string }> = {
+export const GOD_META = localized<Record<PantheonGod, { name: string; role: string; monogram: string }>>({
   prometheus: { name: "Prometheus", role: "Align · Needs", monogram: "P" },
   athena: { name: "Athena", role: "Design · Arch", monogram: "A" },
   hephaestus: { name: "Hephaestus", role: "Build · Sandbox", monogram: "H" },
   momus: { name: "Momus", role: "Review · Audit", monogram: "M" },
   argus: { name: "Argus", role: "Verify · Gate", monogram: "G" },
-};
+});
 
-export const STATUS_BADGE_LABELS: Record<string, string> = {
+export const STATUS_BADGE_LABELS = localized<Record<string, string>>({
   clarify: "Clarify",
   approve_spec: "Approve Spec",
   approve_design: "Approve Design",
@@ -386,19 +401,19 @@ export const STATUS_BADGE_LABELS: Record<string, string> = {
   building: "Building",
   reviewing: "Reviewing",
   verifying: "Verifying",
-  delivered: "Verified",
+  delivered: "Delivered",
   blueprint: "Blueprint Ready",
   cancelled: "Cancelled",
-};
+});
 
-export const PENDING_ACTION_CTA: Record<NonNullable<PendingAction>, string> = {
+export const PENDING_ACTION_CTA = localized<Record<NonNullable<PendingAction>, string>>({
   clarify: "Answer in Drawer",
   approve_spec: "Review Spec",
   approve_design: "Approve Design",
   approve_plan: "Approve Plan",
   resolve_blocker: "Resolve Blocker",
   review_delivery: "Review Delivery",
-};
+});
 
 export function boardBadgeVariant(ballHolder: BallHolder, statusBadge: string): Variant {
   if (statusBadge === "failed" || statusBadge === "blocked") return "bad";
@@ -411,4 +426,39 @@ export function boardBadgeVariant(ballHolder: BallHolder, statusBadge: string): 
 export function shortOracleCode(runId: string): string {
   const cleaned = runId.replace(/^run[-_]?/i, "");
   return cleaned.length > 12 ? cleaned.slice(0, 12) : cleaned || runId;
+}
+
+/**
+ * Some strings arrive from the backend already composed around a Chinese prefix
+ * (`projection.py`): "人工接受风险：{reason}", "前置任务待完成：{ids}", …
+ * Split the prefix off so the fixed part can be localized while the payload is
+ * preserved verbatim; unknown sentences fall through unchanged.
+ */
+export function localizeEvidenceNote(text: string | null | undefined): string {
+  const raw = String(text ?? "");
+  if (!raw) return "";
+  const risk = raw.match(/^人工接受风险：(.+)$/);
+  if (risk) return tr("人工接受风险：{reason}", { reason: risk[1] });
+  const pendingDeps = raw.match(/^前置任务待完成：(.+)$/);
+  if (pendingDeps) return tr("前置任务待完成：{deps}", { deps: pendingDeps[1] });
+  const failedTask = raw.match(/^(.+) 验证未通过$/);
+  if (failedTask) return tr("{taskId} 验证未通过", { taskId: failedTask[1] });
+  const exitCode = raw.match(/^验收命令退出码 (\d+)，详见执行日志$/);
+  if (exitCode) return tr("验收命令退出码 {code}，详见执行日志", { code: exitCode[1] });
+  return tr(raw);
+}
+
+/**
+ * Localize a backend string that glues a known label to a raw id with " · "
+ * (e.g. "需求对齐 · spec-17ab"). Each segment is translated on its own, unknown
+ * segments pass through untouched.
+ */
+export function localizeComposite(text: string | null | undefined): string {
+  const raw = String(text ?? "");
+  if (!raw) return "";
+  if (!raw.includes(" · ")) return tr(raw);
+  return raw
+    .split(" · ")
+    .map((part) => tr(part))
+    .join(" · ");
 }

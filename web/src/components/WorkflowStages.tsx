@@ -1,6 +1,7 @@
 import { Fragment, type KeyboardEvent } from "react";
 
 import type { RunProjection } from "../api/types";
+import { useT } from "../i18n";
 import { buildWorkflowStages, type WorkflowStageStep } from "../lib/workflowStages";
 
 interface WorkflowStagesProps {
@@ -104,6 +105,7 @@ function ExecuteHandoffCard({
   hasDag: boolean;
   dagVisible: boolean;
 }) {
+  const t = useT();
   const totalTasks = projection.progress.total_tasks;
   const verifiedTasks = projection.progress.verified_tasks;
   const jumpToDag = () => {
@@ -114,10 +116,10 @@ function ExecuteHandoffCard({
   if (hasDag && dagVisible && totalTasks > 0) {
     return (
       <div className="wf-handoff" data-handoff="active">
-        <span className="wf-handoff-title">任务级拓扑已展开</span>
-        <p className="wf-handoff-copy">{`已验收 ${verifiedTasks} / ${totalTasks} 个任务，子任务并发波次见下方任务依赖图。`}</p>
+        <span className="wf-handoff-title">{t("任务级拓扑已展开")}</span>
+        <p className="wf-handoff-copy">{t("已验收 {verified} / {total} 个任务，子任务并发波次见下方任务依赖图。", { verified: verifiedTasks, total: totalTasks })}</p>
         <button type="button" className="btn btn-quiet wf-handoff-btn" onClick={jumpToDag}>
-          查看任务依赖图 ↓
+          {t("查看任务依赖图")} ↓
         </button>
       </div>
     );
@@ -125,8 +127,8 @@ function ExecuteHandoffCard({
 
   return (
     <div className="wf-handoff" data-handoff="pending">
-      <span className="wf-handoff-title">任务级拓扑下沉展开</span>
-      <p className="wf-handoff-copy">批准计划后，下方「任务依赖图」将展开并发波次与独立验收进度。</p>
+      <span className="wf-handoff-title">{t("任务级拓扑下沉展开")}</span>
+      <p className="wf-handoff-copy">{t("批准计划后，下方「任务依赖图」将展开并发波次与独立验收进度。")}</p>
     </div>
   );
 }
@@ -138,6 +140,7 @@ export function WorkflowStages({
   hasDag,
   dagVisible,
 }: WorkflowStagesProps) {
+  const t = useT();
   const { columns } = buildWorkflowStages(projection);
 
   if (!columns.length) {
@@ -148,10 +151,10 @@ export function WorkflowStages({
         data-workflow-view="staged"
         data-empty="true"
         role="region"
-        aria-label="编排工作流阶段视图"
+        aria-label={t("编排工作流阶段视图")}
       >
         <p className="wf-empty-notice" role="status">
-          当前工作流未提供拓扑描述
+          {t("当前工作流未提供拓扑描述")}
         </p>
       </div>
     );
@@ -164,7 +167,7 @@ export function WorkflowStages({
       data-workflow-view="staged"
       data-stage-count={columns.length}
       role="region"
-      aria-label="编排工作流阶段视图"
+      aria-label={t("编排工作流阶段视图")}
     >
       <div className="wf-stages" data-cols={columns.length}>
         {columns.map((column, columnIndex) => (

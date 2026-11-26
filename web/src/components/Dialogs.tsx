@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 
 import type { TaskType, WorkspaceMode } from "../api/types";
+import { localized, useT } from "../i18n";
 import {
   TASK_TYPE_LABELS,
   WORKFLOW_SELECT_LABELS,
@@ -12,13 +13,14 @@ import type { NewRunForm, Workbench, WorkbenchState } from "../state/workbench";
 import { DirectoryPicker } from "./DirectoryPicker";
 
 const FILE_NOTE = "支持 .md / .txt / .json / .yaml / .yml";
+const INVALID_FOLDER_SEGMENT = "短目录名必须是单个合法目录段，不能包含 '/'、'\\' 或 '..'";
 const CUSTOM_PATH_VALUE = "__custom__";
 
-const SCOPE_OPTIONS: { id: WorkspaceMode; label: string; hint: string }[] = [
+const SCOPE_OPTIONS: { id: WorkspaceMode; label: string; hint: string }[] = localized([
   { id: "brownfield", label: WORKSPACE_MODE_LABELS.brownfield, hint: "Existing repository" },
   { id: "greenfield", label: WORKSPACE_MODE_LABELS.greenfield, hint: "New empty directory" },
   { id: "spec_only", label: WORKSPACE_MODE_LABELS.spec_only, hint: "Blueprint only" },
-];
+]);
 
 const TASK_TYPE_OPTIONS: { id: TaskType; label: string }[] = [
   { id: "feature", label: TASK_TYPE_LABELS.feature },
@@ -105,11 +107,15 @@ const EMPTY_FORM: NewRunForm = {
 };
 
 export function NewRunDialog({ workbench, state }: { workbench: Workbench; state: WorkbenchState }) {
+  const t = useT();
   const [form, setForm] = useState<NewRunForm>(EMPTY_FORM);
   const [greenfieldParent, setGreenfieldParent] = useState("");
   const [greenfieldParentTouched, setGreenfieldParentTouched] = useState(false);
   const [greenfieldName, setGreenfieldName] = useState("");
-  const [fileNote, setFileNote] = useState(FILE_NOTE);
+  // Source copy + interpolation vars: translated at render so a locale switch re-renders the note.
+  const [fileNote, setFileNote] = useState<{ key: string; vars?: Record<string, string | number> }>({
+    key: FILE_NOTE,
+  });
   const [error, setError] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const fileReadSeq = useRef(0);
@@ -178,18 +184,22 @@ export function NewRunDialog({ workbench, state }: { workbench: Workbench; state
     WORKFLOW_SUMMARY[effectiveWorkflowName] || effectiveWorkflow?.description || "";
   const workflowWriteNote = effectiveWorkflow
     ? effectiveWorkflow.stop_after === "execute"
-      ? "沙盒执行 + 验收"
-      : `止步于 ${effectiveWorkflow.stop_after || "plan"}`
+      ? t("沙盒执行 + 验收")
+      : t("止步于 {stage}", { stage: effectiveWorkflow.stop_after || "plan" })
     : effectiveWorkflowName === "product_blueprint"
-      ? "仅规划，不改代码"
-      : "沙盒执行 + 验收";
+      ? t("仅规划，不改代码")
+      : t("沙盒执行 + 验收");
 
   const demoNote = demo
     ? [
-        demo.workspace_summary || "独立隔离 git 工作区",
-        (demo.constraints || []).length ? `初始约束：${demo.constraints.join("；")}` : "",
+        demo.workspace_summary || t("独立隔离 git 工作区"),
+        (demo.constraints || []).length
+          ? t("初始约束：{items}", { items: demo.constraints.join(t("；")) })
+          : "",
         (demo.clarification_hints || []).length
-          ? `建议澄清参考：${demo.clarification_hints.join(" / ")}`
+          ? t("建议澄清参考：{items}", {
+              items: demo.clarification_hints.join(" / "),
+            })
           : "",
       ]
         .filter(Boolean)
@@ -225,12 +235,12 @@ export function NewRunDialog({ workbench, state }: { workbench: Workbench; state
       greenfieldName.trim() &&
       !isValidSingleFolderSegment(greenfieldName)
     ) {
-      setError("短目录名必须是单个合法目录段，不能包含 '/'、'\\' 或 '..'");
+      setError(t(INVALID_FOLDER_SEGMENT));
       return;
     }
     const result = await workbench.submitNewRun(form);
     if (!result.ok) {
-      setError(`创建请求失败：${result.error}`);
+      setError(t("创建请求失败：{error}", { error: result.error }));
       return;
     }
     fileReadSeq.current += 1;
@@ -242,7 +252,7 @@ export function NewRunDialog({ workbench, state }: { workbench: Workbench; state
       provider: current.provider,
     }));
     setGreenfieldName("");
-    setFileNote(FILE_NOTE);
+    setFileNote({ key: FILE_NOTE });
     setError(null);
     closeDialog();
   };
@@ -271,7 +281,7 @@ export function NewRunDialog({ workbench, state }: { workbench: Workbench; state
       return;
     }
     if (!isValidSingleFolderSegment(trimmed)) {
-      setError("短目录名必须是单个合法目录段，不能包含 '/'、'\\' 或 '..'");
+      setError(t(INVALID_FOLDER_SEGMENT));
       return;
     }
     if (greenfieldParent.trim()) {
@@ -297,11 +307,11 @@ export function NewRunDialog({ workbench, state }: { workbench: Workbench; state
     reader.addEventListener("load", () => {
       if (seq !== fileReadSeq.current) return;
       set({ input: String(reader.result || "") });
-      setFileNote(`已载入 ${file.name} · ${file.size} bytes`);
+      setFileNote({ key: "已载入 {name} · {size} bytes", vars: { name: file.name, size: file.size } });
     });
     reader.addEventListener("error", () => {
       if (seq !== fileReadSeq.current) return;
-      workbench.toast("读取本地文件失败");
+      workbench.toast(t("读取本地文件失败"));
     });
     reader.readAsText(file, "utf-8");
     if (fileInput.current) fileInput.current.value = "";
@@ -318,16 +328,18 @@ export function NewRunDialog({ workbench, state }: { workbench: Workbench; state
         <div className="oracle-modal-head">
           <div>
             <h2 className="dialog-title" id="new-run-dialog-title">
-              Issue Oracle
+              {t("Issue Oracle")}
             </h2>
             <p className="dialog-desc">
-              声明目标作用域与任务类型后发起受控编排。每个人工关口都会在 Oracle Board 停下等待裁决。
+              {t(
+                "声明目标作用域与任务类型后发起受控编排。每个人工关口都会在 Oracle Board 停下等待裁决。",
+              )}
             </p>
           </div>
           <button
             type="button"
             className="btn btn-quiet"
-            aria-label="关闭 Issue Oracle 对话框"
+            aria-label={t("关闭 Issue Oracle 对话框")}
             onClick={closeDialog}
           >
             ×
@@ -336,30 +348,34 @@ export function NewRunDialog({ workbench, state }: { workbench: Workbench; state
 
         {demo ? (
           <div className="oracle-demo-active" id="new-run-demo-banner">
-            <span>{`Benchmark sample active: ${demo.label || demo.title || demo.id}`}</span>
+            <span>
+              {t("Benchmark sample active: {name}", {
+                name: demo.label || demo.title || demo.id,
+              })}
+            </span>
             <button
               type="button"
               className="btn btn-quiet"
               id="btn-clear-demo"
               onClick={() => applyDemo("")}
             >
-              Clear sample
+              {t("Clear sample")}
             </button>
           </div>
         ) : null}
 
-        <section className="oracle-step" aria-label="Step 1: Scope">
+        <section className="oracle-step" aria-label={t("Step 1: Scope")}>
           <div className="oracle-step-head">
-            <span className="oracle-step-title">1. Scope</span>
+            <span className="oracle-step-title">{t("1. Scope")}</span>
             <span className="oracle-step-hint">
               {form.workspaceMode === "brownfield"
-                ? "在既有本地仓库上执行受控变更"
+                ? t("在既有本地仓库上执行受控变更")
                 : form.workspaceMode === "greenfield"
-                  ? "指向新建或空目录，自动注册为 Workspace"
-                  : "仅产出规格与任务蓝图，不修改代码文件"}
+                  ? t("指向新建或空目录，自动注册为 Workspace")
+                  : t("仅产出规格与任务蓝图，不修改代码文件")}
             </span>
           </div>
-          <div className="seg-group" role="group" aria-label="Target Scope">
+          <div className="seg-group" role="group" aria-label={t("Target Scope")}>
             {SCOPE_OPTIONS.map((option) => (
               <button
                 key={option.id}
@@ -379,7 +395,7 @@ export function NewRunDialog({ workbench, state }: { workbench: Workbench; state
             <>
               <div className="form-field">
                 <label className="dialog-label" htmlFor="new-run-workspace">
-                  Target Workspace
+                  {t("Target Workspace")}
                 </label>
                 <select
                   id="new-run-workspace"
@@ -388,20 +404,20 @@ export function NewRunDialog({ workbench, state }: { workbench: Workbench; state
                   onChange={(event) => set({ workspaceId: event.target.value })}
                 >
                   {!workspaces.length ? (
-                    <option value="">Default server workspace</option>
+                    <option value="">{t("Default server workspace")}</option>
                   ) : null}
                   {workspaces.map((ws) => (
                     <option value={ws.workspace_id} key={ws.workspace_id}>
                       {`${ws.name} — ${ws.root_path}`}
                     </option>
                   ))}
-                  <option value={CUSTOM_PATH_VALUE}>Browse / Custom Local Path…</option>
+                  <option value={CUSTOM_PATH_VALUE}>{t("Browse / Custom Local Path…")}</option>
                 </select>
               </div>
               {form.workspaceId === CUSTOM_PATH_VALUE ? (
                 <div className="form-field">
                   <label className="dialog-label" htmlFor="new-run-workspace-root">
-                    Existing Directory Path
+                    {t("Existing Directory Path")}
                   </label>
                   <DirectoryPicker
                     idPrefix="new-run-custom"
@@ -418,20 +434,20 @@ export function NewRunDialog({ workbench, state }: { workbench: Workbench; state
               <div className="form-grid">
                 <div className="form-field">
                   <label className="dialog-label" htmlFor="new-run-base-ref">
-                    Base Ref (optional)
+                    {t("Base Ref (optional)")}
                   </label>
                   <input
                     id="new-run-base-ref"
                     className="field"
                     type="text"
-                    placeholder={selectedWorkspace?.default_branch || "e.g. main"}
+                    placeholder={selectedWorkspace?.default_branch || t("e.g. main")}
                     value={form.baseRef}
                     onChange={(event) => set({ baseRef: event.target.value })}
                   />
                 </div>
                 <div className="form-field">
                   <label className="dialog-label" htmlFor="new-run-scope-paths">
-                    Scope Paths (optional)
+                    {t("Scope Paths (optional)")}
                   </label>
                   <input
                     id="new-run-scope-paths"
@@ -450,7 +466,7 @@ export function NewRunDialog({ workbench, state }: { workbench: Workbench; state
             <div className="greenfield-scope-box">
               <div className="form-field">
                 <label className="dialog-label" htmlFor="new-run-greenfield-parent-input">
-                  Parent Directory
+                  {t("Parent Directory")}
                 </label>
                 <DirectoryPicker
                   idPrefix="new-run-greenfield-parent"
@@ -467,13 +483,13 @@ export function NewRunDialog({ workbench, state }: { workbench: Workbench; state
               <div className="form-grid">
                 <div className="form-field">
                   <label className="dialog-label" htmlFor="new-run-greenfield-name">
-                    Short Folder Name
+                    {t("Short Folder Name")}
                   </label>
                   <input
                     id="new-run-greenfield-name"
                     className="field mono"
                     type="text"
-                    placeholder="e.g. voice-cli-new"
+                    placeholder={t("e.g. voice-cli-new")}
                     value={greenfieldName}
                     disabled={state.submitting}
                     onChange={(event) => handleGreenfieldNameChange(event.target.value)}
@@ -481,7 +497,7 @@ export function NewRunDialog({ workbench, state }: { workbench: Workbench; state
                 </div>
                 <div className="form-field">
                   <label className="dialog-label" htmlFor="new-run-greenfield-path">
-                    Target Directory Path
+                    {t("Target Directory Path")}
                   </label>
                   <input
                     id="new-run-greenfield-path"
@@ -502,7 +518,7 @@ export function NewRunDialog({ workbench, state }: { workbench: Workbench; state
                   disabled={state.submitting}
                   onChange={(event) => set({ initGit: event.target.checked })}
                 />
-                <span>Initialize Git repo (git init)</span>
+                <span>{t("Initialize Git repo (git init)")}</span>
               </label>
             </div>
           ) : null}
@@ -510,7 +526,7 @@ export function NewRunDialog({ workbench, state }: { workbench: Workbench; state
           {form.workspaceMode === "spec_only" && !demo ? (
             <div className="form-field">
               <label className="dialog-label" htmlFor="new-run-context-workspace">
-                Read-Only Context Workspace (optional)
+                {t("Read-Only Context Workspace (optional)")}
               </label>
               <select
                 id="new-run-context-workspace"
@@ -518,7 +534,7 @@ export function NewRunDialog({ workbench, state }: { workbench: Workbench; state
                 value={form.contextWorkspaceId}
                 onChange={(event) => set({ contextWorkspaceId: event.target.value })}
               >
-                <option value="">None (workspace-less blueprint)</option>
+                <option value="">{t("None (workspace-less blueprint)")}</option>
                 {workspaces.map((ws) => (
                   <option value={ws.workspace_id} key={ws.workspace_id}>
                     {`${ws.name} — ${ws.root_path}`}
@@ -529,12 +545,14 @@ export function NewRunDialog({ workbench, state }: { workbench: Workbench; state
           ) : null}
         </section>
 
-        <section className="oracle-step" aria-label="Step 2: Task Type">
+        <section className="oracle-step" aria-label={t("Step 2: Task Type")}>
           <div className="oracle-step-head">
-            <span className="oracle-step-title">2. Task Type</span>
-            <span className="oracle-step-hint">决定默认工作流与 Stage 1 对齐策略</span>
+            <span className="oracle-step-title">{t("2. Task Type")}</span>
+            <span className="oracle-step-hint">
+              {t("决定默认工作流与 Stage 1 对齐策略")}
+            </span>
           </div>
-          <div className="seg-group" role="group" aria-label="Task Type">
+          <div className="seg-group" role="group" aria-label={t("Task Type")}>
             {TASK_TYPE_OPTIONS.map((option) => (
               <button
                 key={option.id}
@@ -549,40 +567,42 @@ export function NewRunDialog({ workbench, state }: { workbench: Workbench; state
             ))}
           </div>
           <p className="oracle-workflow-summary" id="new-run-workflow-meta">
-            {form.workflow ? "Workflow override: " : "Auto workflow: "}
+            {form.workflow ? t("Workflow override:") : t("Auto workflow:")}{" "}
             <strong>{effectiveWorkflowName}</strong>
             {` · ${workflowWriteNote}`}
             {workflowSummaryText ? ` — ${workflowSummaryText}` : ""}
           </p>
         </section>
 
-        <section className="oracle-step" aria-label="Step 3: Intent">
+        <section className="oracle-step" aria-label={t("Step 3: Intent")}>
           <div className="oracle-step-head">
-            <span className="oracle-step-title">3. Intent</span>
-            <span className="oracle-step-hint">描述目标、可观察面与约束，或导入本地文档</span>
+            <span className="oracle-step-title">{t("3. Intent")}</span>
+            <span className="oracle-step-hint">
+              {t("描述目标、可观察面与约束，或导入本地文档")}
+            </span>
           </div>
           <div className="form-field">
             <label className="dialog-label" htmlFor="new-run-title">
-              标题（可选）
+              {t("标题（可选）")}
             </label>
             <input
               id="new-run-title"
               className="field"
               type="text"
-              placeholder="例如：Fix hooks write_scope bypass"
+              placeholder={t("例如：Fix hooks write_scope bypass")}
               value={form.title}
               onChange={(event) => set({ title: event.target.value })}
             />
           </div>
           <div className="form-field">
             <label className="dialog-label" htmlFor="new-run-input">
-              需求原文
+              {t("需求原文")}
             </label>
             <textarea
               id="new-run-input"
               className="field"
               rows={5}
-              placeholder="描述目标、可观察面、范围与约束…"
+              placeholder={t("描述目标、可观察面、范围与约束…")}
               value={form.input}
               onChange={(event) => set({ input: event.target.value })}
             />
@@ -594,7 +614,7 @@ export function NewRunDialog({ workbench, state }: { workbench: Workbench; state
               id="btn-new-run-file"
               onClick={() => fileInput.current?.click()}
             >
-              导入本地文件
+              {t("导入本地文件")}
             </button>
             <input
               type="file"
@@ -605,19 +625,19 @@ export function NewRunDialog({ workbench, state }: { workbench: Workbench; state
               onChange={onFile}
             />
             <span className="card-note" id="new-run-file-note">
-              {fileNote}
+              {t(fileNote.key, fileNote.vars)}
             </span>
           </div>
         </section>
 
         <div className="dialog-disclosures">
           <details className="dialog-disclosure" id="new-run-advanced">
-            <summary>Advanced Runtime Overrides</summary>
+            <summary>{t("Advanced Runtime Overrides")}</summary>
             <div className="dialog-disclosure-body">
               <div className="form-grid">
                 <div className="form-field">
                   <label className="dialog-label" htmlFor="new-run-workflow">
-                    工作流覆盖
+                    {t("工作流覆盖")}
                   </label>
                   <select
                     id="new-run-workflow"
@@ -625,7 +645,7 @@ export function NewRunDialog({ workbench, state }: { workbench: Workbench; state
                     value={form.workflow}
                     onChange={(event) => set({ workflow: event.target.value })}
                   >
-                    <option value="">{`Auto (${autoWorkflow})`}</option>
+                    <option value="">{t("Auto ({name})", { name: autoWorkflow })}</option>
                     {workflows.map((workflow) => (
                       <option value={workflow.name} key={workflow.name}>
                         {WORKFLOW_SELECT_LABELS[workflow.name] ||
@@ -636,7 +656,7 @@ export function NewRunDialog({ workbench, state }: { workbench: Workbench; state
                 </div>
                 <div className="form-field">
                   <label className="dialog-label" htmlFor="new-run-provider">
-                    模型提供方
+                    {t("模型提供方")}
                   </label>
                   <select
                     id="new-run-provider"
@@ -646,52 +666,54 @@ export function NewRunDialog({ workbench, state }: { workbench: Workbench; state
                   >
                     {options ? (
                       <>
-                        <option value="auto">auto · 自动选择已配置提供方</option>
+                        <option value="auto">{t("auto · 自动选择已配置提供方")}</option>
                         {providers.map((provider) => (
                           <option value={provider.id} key={provider.id}>
-                            {`${provider.id} ${provider.configured ? "(已配置)" : "(未配置->Mock)"}`}
+                            {`${provider.id} ${
+                              provider.configured ? t("(已配置)") : t("(未配置->Mock)")
+                            }`}
                           </option>
                         ))}
-                        <option value="mock">mock · 确定性模拟</option>
+                        <option value="mock">{t("mock · 确定性模拟")}</option>
                       </>
                     ) : null}
                   </select>
                 </div>
                 <div className="form-field">
                   <label className="dialog-label" htmlFor="new-run-model">
-                    模型（可选）
+                    {t("模型（可选）")}
                   </label>
                   <input
                     id="new-run-model"
                     className="field"
                     type="text"
-                    placeholder="留空使用提供方默认模型"
+                    placeholder={t("留空使用提供方默认模型")}
                     value={form.model}
                     onChange={(event) => set({ model: event.target.value })}
                   />
                 </div>
                 <div className="form-field">
                   <label className="dialog-label" htmlFor="new-run-worker-driver">
-                    执行驱动（可选）
+                    {t("执行驱动（可选）")}
                   </label>
                   <input
                     id="new-run-worker-driver"
                     className="field"
                     type="text"
-                    placeholder="留空使用环境配置"
+                    placeholder={t("留空使用环境配置")}
                     value={form.workerDriver}
                     onChange={(event) => set({ workerDriver: event.target.value })}
                   />
                 </div>
                 <div className="form-field">
                   <label className="dialog-label" htmlFor="new-run-reviewer-driver">
-                    审查驱动（可选）
+                    {t("审查驱动（可选）")}
                   </label>
                   <input
                     id="new-run-reviewer-driver"
                     className="field"
                     type="text"
-                    placeholder="留空使用环境配置"
+                    placeholder={t("留空使用环境配置")}
                     value={form.reviewerDriver}
                     onChange={(event) => set({ reviewerDriver: event.target.value })}
                   />
@@ -701,11 +723,11 @@ export function NewRunDialog({ workbench, state }: { workbench: Workbench; state
           </details>
 
           <details className="dialog-disclosure" id="new-run-benchmark-disclosure">
-            <summary>Load Benchmark Sample</summary>
+            <summary>{t("Load Benchmark Sample")}</summary>
             <div className="dialog-disclosure-body">
               <div className="form-field">
                 <label className="dialog-label" htmlFor="new-run-demo">
-                  Benchmark 预设样本（可选）
+                  {t("Benchmark 预设样本（可选）")}
                 </label>
                 <select
                   id="new-run-demo"
@@ -713,7 +735,7 @@ export function NewRunDialog({ workbench, state }: { workbench: Workbench; state
                   value={form.demoId}
                   onChange={(event) => applyDemo(event.target.value)}
                 >
-                  {options ? <option value="">无（使用上方自定义作用域）</option> : null}
+                  {options ? <option value="">{t("无（使用上方自定义作用域）")}</option> : null}
                   {demos.map((item) => (
                     <option value={item.id} key={item.id}>
                       {item.label || item.title || item.id}
@@ -736,7 +758,7 @@ export function NewRunDialog({ workbench, state }: { workbench: Workbench; state
 
         <div className="dialog-actions">
           <button type="button" className="btn btn-quiet" onClick={closeDialog}>
-            取消
+            {t("取消")}
           </button>
           <button
             type="submit"
@@ -744,7 +766,7 @@ export function NewRunDialog({ workbench, state }: { workbench: Workbench; state
             id="new-run-submit"
             disabled={state.submitting}
           >
-            {state.submitting ? "正在提交…" : "Issue Oracle · 创建并启动"}
+            {state.submitting ? t("正在提交…") : t("Issue Oracle · 创建并启动")}
           </button>
         </div>
       </form>
@@ -753,6 +775,7 @@ export function NewRunDialog({ workbench, state }: { workbench: Workbench; state
 }
 
 export function HitlDialog({ workbench, state }: { workbench: Workbench; state: WorkbenchState }) {
+  const t = useT();
   const config = state.dialog;
   return (
     <NativeDialog
@@ -763,21 +786,26 @@ export function HitlDialog({ workbench, state }: { workbench: Workbench; state: 
     >
       <form method="dialog" id="hitl-dialog-form">
         <h2 className="dialog-title" id="hitl-dialog-title">
-          {config?.title || "人工关口操作"}
+          {config?.title || t("人工关口操作")}
         </h2>
         <p className="dialog-desc" id="hitl-dialog-desc">
           {config?.description || ""}
         </p>
         <label className="dialog-label" htmlFor="hitl-dialog-input" id="hitl-dialog-label">
-          {config?.label || "补充说明"}
+          {config?.label || t("补充说明")}
         </label>
-        <textarea id="hitl-dialog-input" className="field" rows={3} placeholder="请输入提示或风险接受理由…" />
+        <textarea
+          id="hitl-dialog-input"
+          className="field"
+          rows={3}
+          placeholder={t("请输入提示或风险接受理由…")}
+        />
         <div className="dialog-actions">
           <button type="submit" className="btn btn-quiet" value="cancel">
-            取消
+            {t("取消")}
           </button>
           <button type="submit" className="btn btn-primary" id="hitl-dialog-submit" value="confirm">
-            确认提交
+            {t("确认提交")}
           </button>
         </div>
       </form>
@@ -786,9 +814,10 @@ export function HitlDialog({ workbench, state }: { workbench: Workbench; state: 
 }
 
 export function Toast({ state }: { state: WorkbenchState }) {
+  const t = useT();
   return (
     <div className="toast" id="toast-bar" role="status" aria-live="polite" hidden={!state.toast.visible}>
-      {state.toast.message}
+      {t(state.toast.message)}
     </div>
   );
 }

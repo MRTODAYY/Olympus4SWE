@@ -9,17 +9,19 @@ import type {
   ReviewSection,
   RunProjection,
 } from "../api/types";
+import { useT } from "../i18n";
+import { localizedTable } from "../i18n/localized";
 import { APPROVAL_BUTTONS, APPROVAL_LABELS, localizeError, taskBlocker, type Variant } from "../lib/labels";
 import type { ApprovalOrigin, Workbench, WorkbenchState } from "../state/workbench";
 import { DesignStructure, DesignTradeoff } from "./spec";
 import { Badge } from "./ui";
 
-const CHANGE_LABELS: Record<string, [string, Variant]> = {
+const CHANGE_LABELS: Record<string, [string, Variant]> = localizedTable({
   changed: ["变更", "warn"],
   added: ["新增", "ok"],
   removed: ["移除", "warn"],
   affected: ["需复核", "warn"],
-};
+});
 
 const ACTIONS = Object.keys(APPROVAL_LABELS) as ApprovalAction[];
 
@@ -44,16 +46,21 @@ function OriginButton({
   entryName: string;
   onLocate: (ref: string, baseline: boolean) => void;
 }) {
+  const t = useT();
   return (
     <button
       type="button"
       className="approval-ref"
       data-review-ref={pointer}
       data-review-old-ref={baseline ? "" : undefined}
-      aria-label={`定位 ${baseline ? "上次批准的 " : ""}${entryName}`}
+      aria-label={
+        baseline
+          ? t("定位上次批准的 {name}", { name: entryName })
+          : t("定位 {name}", { name: entryName })
+      }
       onClick={() => onLocate(pointer, baseline)}
     >
-      {baseline ? "上次原条目" : "原条目"}
+      {baseline ? t("上次原条目") : t("原条目")}
     </button>
   );
 }
@@ -65,6 +72,7 @@ function ApprovalSections({
   sections: ReviewSection[];
   onLocate: (ref: string, baseline: boolean) => void;
 }) {
+  const t = useT();
   return (
     <>
       {sections.map(({ title, entries, empty_text }, sectionIndex) => (
@@ -87,7 +95,7 @@ function ApprovalSections({
                     {previous ? (
                       <>
                         <div>
-                          <small>上次批准</small>{" "}
+                          <small>{t("上次批准")}</small>{" "}
                           {previous.label && previous.label !== label ? (
                             <>
                               <strong>{previous.label}</strong>{" "}
@@ -96,14 +104,14 @@ function ApprovalSections({
                           <EntryContent entry={previous} />{" "}
                           <OriginButton pointer={previous.ref} baseline entryName={entryName} onLocate={onLocate} />
                         </div>
-                        <small>本次候选</small>{" "}
+                        <small>{t("本次候选")}</small>{" "}
                       </>
                     ) : null}
                     <EntryContent entry={entry} />{" "}
                     {entry.provenance === "agent_high_impact" ? (
-                      <Badge variant="warn">Agent 补充 · 高影响</Badge>
+                      <Badge variant="warn">{t("Agent 补充 · 高影响")}</Badge>
                     ) : entry.provenance === "unknown" ? (
-                      <Badge variant="muted">来源未记录</Badge>
+                      <Badge variant="muted">{t("来源未记录")}</Badge>
                     ) : null}{" "}
                     {related ? null : (
                       <OriginButton
@@ -127,13 +135,14 @@ function ApprovalSections({
 }
 
 function OriginPanel({ origin }: { origin: ApprovalOrigin | undefined }) {
+  const t = useT();
   return (
     <div className="approval-origin" hidden={!origin}>
       {origin ? (
         <>
           <code tabIndex={-1}>{origin.ref}</code>
           <p>{origin.text}</p>
-          {origin.source ? <p>{`规格引用 · ${origin.source}`}</p> : null}
+          {origin.source ? <p>{t("规格引用 · {source}", { source: origin.source })}</p> : null}
         </>
       ) : null}
     </div>
@@ -165,6 +174,7 @@ export function ApprovalReviewCard({
   onRequestRevision?: (action: ApprovalAction, feedback: string) => Promise<void> | void;
   disabled?: boolean;
 }) {
+  const t = useT();
   const [revisionOpen, setRevisionOpen] = useState(false);
   const [revisionFeedback, setRevisionFeedback] = useState("");
   const title = APPROVAL_LABELS[action];
@@ -207,11 +217,11 @@ export function ApprovalReviewCard({
           <ApprovalSections sections={sections} onLocate={onLocate} />
         </div>
       ) : baseline ? (
-        <p>已核对的关键承诺一致。</p>
+        <p>{t("已核对的关键承诺一致。")}</p>
       ) : null}
       {unchanged.length ? (
         <details data-review-disclosure="unchanged">
-          <summary>查看已确认未变的条目</summary>
+          <summary>{t("查看已确认未变的条目")}</summary>
           <div className="approval-sections">
             <ApprovalSections sections={unchanged} onLocate={onLocate} />
           </div>
@@ -220,7 +230,7 @@ export function ApprovalReviewCard({
       <div className="approval-controls">
         {review.artifact === "design" ? (
           <details data-review-disclosure="structure">
-            <summary>查看模块、数据模型与接口</summary>
+            <summary>{t("查看模块、数据模型与接口")}</summary>
             <DesignStructure design={artifact as DesignSpec} />
           </details>
         ) : null}
@@ -231,17 +241,17 @@ export function ApprovalReviewCard({
             data-review-plan-graph=""
             onClick={onOpenTaskGraph}
           >
-            查看任务依赖图
+            {t("查看任务依赖图")}
           </button>
         ) : null}
         <details data-review-disclosure="candidate">
-          <summary>{`查看完整 ${title}`}</summary>
+          <summary>{t("查看完整 {title}", { title })}</summary>
           <OriginPanel origin={origin?.version === "candidate" ? origin : undefined} />
           <pre tabIndex={0}>{JSON.stringify(artifact, null, 2)}</pre>
         </details>
         {baseline ? (
           <details data-review-disclosure="baseline" data-review-baseline="">
-            <summary>{`查看上次批准的 ${title}`}</summary>
+            <summary>{t("查看上次批准的 {title}", { title })}</summary>
             <OriginPanel origin={origin?.version === "baseline" ? origin : undefined} />
             <pre tabIndex={0}>{JSON.stringify(baseline, null, 2)}</pre>
           </details>
@@ -253,7 +263,7 @@ export function ApprovalReviewCard({
           disabled={disabled}
           onClick={() => setRevisionOpen((open) => !open)}
         >
-          要求修订
+          {t("要求修订")}
         </button>
         <button
           type="button"
@@ -263,7 +273,7 @@ export function ApprovalReviewCard({
           disabled={approveDisabled}
           onClick={onApprove}
         >
-          {awaitingResynthesis ? "等待需求融合完成…" : button.label}
+          {awaitingResynthesis ? t("等待需求融合完成…") : button.label}
         </button>
         {revisionOpen ? (
           <div className="approval-revise" data-revise-panel={action}>
@@ -272,7 +282,7 @@ export function ApprovalReviewCard({
               id={`revision-feedback-${action}`}
               rows={3}
               value={revisionFeedback}
-              placeholder="描述需要修订的需求、边界或验收标准…"
+              placeholder={t("描述需要修订的需求、边界或验收标准…")}
               onChange={(event) => setRevisionFeedback(event.target.value)}
             />
             <button
@@ -282,7 +292,7 @@ export function ApprovalReviewCard({
               disabled={disabled || !revisionFeedback.trim()}
               onClick={submitRevision}
             >
-              提交修订意见
+              {t("提交修订意见")}
             </button>
           </div>
         ) : null}
@@ -294,13 +304,14 @@ export function ApprovalReviewCard({
 const TONE_GLYPHS: Record<string, string> = { ok: "✓", warn: "⚠", info: "◷" };
 
 export function HitlBanner({ workbench, state }: { workbench: Workbench; state: WorkbenchState }) {
+  const t = useT();
   const projection = state.projection;
   if (!projection) {
     return (
       <section className="hitl-banner" id="hitl-banner" data-tone="danger" aria-live="polite" hidden>
         <div className="hitl-copy">
           <p className="hitl-headline" id="hitl-headline">
-            正在加载编排状态…
+            {t("正在加载编排状态…")}
           </p>
           <p className="hitl-detail" id="hitl-detail" />
         </div>
@@ -318,15 +329,20 @@ export function HitlBanner({ workbench, state }: { workbench: Workbench; state: 
   const hidden = !banner && !hasGate;
   const tone = banner ? ("tone" in banner && banner.tone) || "danger" : "warn";
   const glyph = TONE_GLYPHS[tone] || "✕";
-  const headline = banner?.headline || "候选版本待批准";
+  const headline = banner?.headline || t("候选版本待批准");
   const detailAlreadyShown =
     (reviews.has("approve_spec") && banner?.detail === projection.spec?.goal) ||
     (reviews.has("approve_design") && banner?.detail === projection.design?.architecture_summary);
   let detail = detailAlreadyShown ? "" : banner?.detail;
   if (blocker) {
-    detail = `受影响任务：${(blocker.affected_task_ids || []).join("、")}。原因：${blocker.detail}`;
+    detail = t("受影响任务：{tasks}。原因：{reason}", {
+      tasks: (blocker.affected_task_ids || []).join(t("、")),
+      reason: blocker.detail,
+    });
   }
-  const cleanDetail = String(detail || "").replace(/\s*\n+\s*/g, "，").trim();
+  const cleanDetail = String(detail || "")
+    .replace(/\s*\n+\s*/g, t("，"))
+    .trim();
   const localized = blocker ? cleanDetail : localizeError(cleanDetail);
 
   return (
@@ -349,10 +365,10 @@ export function HitlBanner({ workbench, state }: { workbench: Workbench; state: 
       </div>
       <div className="hitl-actions" id="hitl-task-actions" hidden={!blocker}>
         <button type="button" className="btn btn-primary" id="btn-banner-hint" onClick={() => workbench.hintBannerTask()}>
-          注入提示
+          {t("注入提示")}
         </button>
         <button type="button" className="btn" id="btn-banner-inspect" onClick={() => workbench.inspectBannerTask()}>
-          查看定位
+          {t("查看定位")}
         </button>
         <button
           type="button"
@@ -360,10 +376,10 @@ export function HitlBanner({ workbench, state }: { workbench: Workbench; state: 
           id="btn-banner-retry"
           onClick={() => void workbench.retryBannerTask()}
         >
-          重试任务
+          {t("重试任务")}
         </button>
         <button type="button" className="btn" id="btn-banner-reassign" onClick={() => workbench.reassignBannerTask()}>
-          改派给人
+          {t("改派给人")}
         </button>
         <button
           type="button"
@@ -371,7 +387,7 @@ export function HitlBanner({ workbench, state }: { workbench: Workbench; state: 
           id="btn-banner-accept-risk"
           onClick={() => workbench.acceptBannerTaskRisk()}
         >
-          接受风险
+          {t("接受风险")}
         </button>
       </div>
       <div className="hitl-actions" id="hitl-gate-actions" hidden={!(promoteGate || runFailed || canRetry)}>
@@ -382,7 +398,7 @@ export function HitlBanner({ workbench, state }: { workbench: Workbench; state: 
           hidden={!promoteGate}
           onClick={() => void workbench.promoteToExecute()}
         >
-          转入沙盒执行 (full_sdlc_tdd)
+          {t("转入沙盒执行 (full_sdlc_tdd)")}
         </button>
         <button
           type="button"
@@ -391,7 +407,7 @@ export function HitlBanner({ workbench, state }: { workbench: Workbench; state: 
           hidden={!canRetry}
           onClick={() => void workbench.retryWorkflow()}
         >
-          从断点重试
+          {t("从断点重试")}
         </button>
         <button
           type="button"
@@ -400,10 +416,15 @@ export function HitlBanner({ workbench, state }: { workbench: Workbench; state: 
           hidden={!runFailed}
           onClick={() => workbench.inspectFailure()}
         >
-          查看节点日志
+          {t("查看节点日志")}
         </button>
       </div>
-      <section id="hitl-approval-reviews" className="approval-reviews" aria-label="审批候选版本" hidden={!reviews.size}>
+      <section
+        id="hitl-approval-reviews"
+        className="approval-reviews"
+        aria-label={t("审批候选版本")}
+        hidden={!reviews.size}
+      >
         {ACTIONS.map((action) => {
           const binding = reviews.get(action);
           const review = projection.approval_reviews?.[action];

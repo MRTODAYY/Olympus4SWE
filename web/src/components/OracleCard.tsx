@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import type { RunSummary, SeatState } from "../api/types";
+import { useT } from "../i18n";
 import {
   boardBadgeVariant,
   GOD_META,
@@ -31,6 +32,7 @@ export function OracleCard({
   onQuickRule,
   actionSlot,
 }: OracleCardProps) {
+  const t = useT();
   const god = GOD_META[run.active_god] || GOD_META.prometheus;
   const badgeVariant = boardBadgeVariant(run.ball_holder, run.status_badge);
   const badgeLabel = STATUS_BADGE_LABELS[run.status_badge] || run.status_badge;
@@ -40,12 +42,14 @@ export function OracleCard({
 
   const handoffText =
     run.ball_holder === "human"
-      ? `${god.name} → You`
+      ? `${god.name} ${t("→ 你")}`
       : run.worktree_branch
         ? `${god.name} · ${run.worktree_branch}`
         : `${god.name} · ${god.role}`;
 
-  const quickLabel = run.pending_action ? PENDING_ACTION_CTA[run.pending_action] : "Review";
+  const quickLabel = run.pending_action
+    ? t(PENDING_ACTION_CTA[run.pending_action] || "Review")
+    : t("Review");
   const cardAvatarState: SeatState =
     run.ball_holder === "human"
       ? "waiting_on_human"
@@ -96,8 +100,8 @@ export function OracleCard({
 
         <div className="oracle-card-actions">
           {isOpenTab ? (
-            <span className="oracle-open-indicator" title="Opened in Ariadne Tabs">
-              Tab Open
+            <span className="oracle-open-indicator" title={t("Opened in Ariadne Tabs")}>
+              {t("Tab Open")}
             </span>
           ) : null}
           {actionSlot ? (
@@ -117,7 +121,7 @@ export function OracleCard({
               className="oracle-open-cta"
               onClick={() => onOpenTab(run.run_id)}
             >
-              Open Cockpit →
+              {t("Open Cockpit →")}
             </button>
           )}
         </div>

@@ -118,6 +118,54 @@
   flex: 0 0 auto;
 }
 
+/* Locale switch (EN ⇄ 中) — sits next to the theme and collapse affordances. */
+.locale-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-inline-size: 26px;
+  block-size: 22px;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: color var(--motion-fast), border-color var(--motion-fast),
+    background-color var(--motion-fast);
+}
+
+.locale-toggle:hover {
+  color: var(--text-ink);
+  border-color: var(--rule-hard);
+  background: var(--surface-sunk);
+}
+
+.locale-toggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.locale-toggle-label {
+  font-family: var(--face-mono);
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: var(--tracking-label);
+  line-height: 1;
+}
+
+.locale-toggle[data-locale="zh"] .locale-toggle-label {
+  font-family: var(--face-sans);
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-medium);
+}
+
+body[data-rail="collapsed"] .locale-toggle,
+#rail.collapsed .locale-toggle {
+  padding: 0;
+  min-inline-size: 22px;
+}
+
 .workspace-switcher-wrap {
   min-inline-size: 0;
 }

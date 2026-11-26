@@ -1,4 +1,5 @@
 import type { BallHolder, RunSummary } from "../api/types";
+import { LocaleToggle, useT } from "../i18n";
 import type { Workbench, WorkbenchState } from "../state/workbench";
 
 const REGISTER_OPTION = "__register__";
@@ -107,19 +108,24 @@ function resolveTabMeta(
 }
 
 export function ThreadRail({ workbench, state }: { workbench: Workbench; state: WorkbenchState }) {
+  const t = useT();
   const collapsed = state.railCollapsed === true;
   const dark = state.theme === "dark";
   const boardActive = state.activeSurface === "board" && !state.showArchived;
   const archiveActive = state.activeSurface === "board" && state.showArchived;
   const repoCount = state.workspaces.length;
+  const allProjectsLabel =
+    repoCount === 1
+      ? t("全部项目（1 个仓库）")
+      : t("全部项目（{count} 个仓库）", { count: repoCount });
 
   return (
-    <nav id="rail" className={collapsed ? "scroller collapsed" : "scroller"} aria-label="Olympus 导航栏">
+    <nav id="rail" className={collapsed ? "scroller collapsed" : "scroller"} aria-label={t("Olympus 导航栏")}>
       <div className="rail-head-row">
         <button
           type="button"
           className="rail-brand"
-          aria-label="返回 Oracle Board"
+          aria-label={t("返回 Oracle Board")}
           onClick={() => workbench.openBoard({ archived: false })}
         >
           <span className="rail-mark" aria-hidden="true">
@@ -128,11 +134,12 @@ export function ThreadRail({ workbench, state }: { workbench: Workbench; state: 
           <span className="rail-wordmark">OLYMPUS</span>
         </button>
         <div className="rail-head-actions">
+          <LocaleToggle />
           <button
             type="button"
             className="btn btn-quiet"
             id="theme-toggle"
-            aria-label={dark ? "切换到浅色主题" : "切换到深色主题"}
+            aria-label={dark ? t("切换到浅色主题") : t("切换到深色主题")}
             onClick={() => workbench.toggleTheme()}
           >
             {dark ? "☀" : "☾"}
@@ -142,7 +149,7 @@ export function ThreadRail({ workbench, state }: { workbench: Workbench; state: 
             className="btn btn-quiet"
             id="btn-rail-collapse"
             aria-expanded={collapsed ? "false" : "true"}
-            aria-label="折叠侧栏"
+            aria-label={t("折叠侧栏")}
             onClick={() => workbench.toggleRail()}
           >
             {collapsed ? "⇥" : "⇤"}
@@ -154,7 +161,7 @@ export function ThreadRail({ workbench, state }: { workbench: Workbench; state: 
         <select
           id="workspace-switcher"
           className="workspace-select"
-          aria-label="Workspace switcher"
+          aria-label={t("Workspace switcher")}
           value={state.selectedWorkspaceId || ""}
           onChange={(event) => {
             const value = event.target.value;
@@ -165,9 +172,7 @@ export function ThreadRail({ workbench, state }: { workbench: Workbench; state: 
             workbench.selectWorkspace(value || null);
           }}
         >
-          <option value="">
-            {`All Projects (${repoCount} ${repoCount === 1 ? "repo" : "repos"})`}
-          </option>
+          <option value="">{allProjectsLabel}</option>
           {state.workspaces.map((ws) => {
             const total = ws.active_oracle_count + ws.pending_ruling_count;
             return (
@@ -176,11 +181,11 @@ export function ThreadRail({ workbench, state }: { workbench: Workbench; state: 
               </option>
             );
           })}
-          <option value={REGISTER_OPTION}>+ Register Workspace…</option>
+          <option value={REGISTER_OPTION}>{t("+ 注册工作区…")}</option>
         </select>
       </div>
 
-      <div className="rail-nav" role="group" aria-label="Pinned navigation">
+      <div className="rail-nav" role="group" aria-label={t("Pinned navigation")}>
         <button
           type="button"
           id="nav-oracle-board"
@@ -189,12 +194,12 @@ export function ThreadRail({ workbench, state }: { workbench: Workbench; state: 
           onClick={() => workbench.openBoard({ archived: false })}
         >
           <BoardIcon />
-          <span className="rail-label">Oracle Board</span>
+          <span className="rail-label">{t("Oracle Board")}</span>
           {state.pendingRulingTotal > 0 ? (
             <span
               className="nav-pending-badge"
               id="nav-pending-badge"
-              aria-label={`${state.pendingRulingTotal} awaiting ruling`}
+              aria-label={t("{count} 项待裁决", { count: state.pendingRulingTotal })}
             >
               {state.pendingRulingTotal}
             </span>
@@ -208,7 +213,7 @@ export function ThreadRail({ workbench, state }: { workbench: Workbench; state: 
           onClick={() => void workbench.openWorkspaceManager()}
         >
           <WorkspaceIcon />
-          <span className="rail-label">Workspaces</span>
+          <span className="rail-label">{t("Workspaces")}</span>
           <span className="nav-meta-count">{repoCount}</span>
         </button>
 
@@ -220,19 +225,19 @@ export function ThreadRail({ workbench, state }: { workbench: Workbench; state: 
           onClick={() => workbench.toggleArchive()}
         >
           <ArchiveIcon />
-          <span className="rail-label">Archive</span>
+          <span className="rail-label">{t("Archive")}</span>
         </button>
       </div>
 
       <hr className="rail-divider" />
 
       <div className="rail-tabs-section">
-        <p className="rail-section-title">OPEN ARIADNE TABS</p>
+        <p className="rail-section-title">{t("OPEN ARIADNE TABS")}</p>
         <div
           className="open-tabs-list scroller"
           id="open-tabs"
           role="list"
-          aria-label="Open Ariadne Tabs"
+          aria-label={t("Open Ariadne Tabs")}
         >
           {state.openTabs.length ? (
             state.openTabs.map((runId) => {
@@ -272,7 +277,7 @@ export function ThreadRail({ workbench, state }: { workbench: Workbench; state: 
                   <button
                     type="button"
                     className="ariadne-tab-close"
-                    aria-label={`Close tab ${meta.title}`}
+                    aria-label={t("关闭标签 {title}", { title: meta.title })}
                     data-close-tab={runId}
                     onClick={() => workbench.closeOracleTab(runId)}
                   >
@@ -282,7 +287,7 @@ export function ThreadRail({ workbench, state }: { workbench: Workbench; state: 
               );
             })
           ) : (
-            <p className="thread-empty">Select an Oracle card to open an Ariadne cockpit tab.</p>
+            <p className="thread-empty">{t("Select an Oracle card to open an Ariadne cockpit tab.")}</p>
           )}
         </div>
       </div>

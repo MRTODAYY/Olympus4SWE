@@ -14,6 +14,7 @@ import { ThreadRail } from "./components/ThreadRail";
 import { TopologyView } from "./components/TopologyView";
 import { DesignView, MatrixView, WaterfallView } from "./components/Views";
 import { WorkspaceDialog } from "./components/WorkspaceDialog";
+import { useT } from "./i18n";
 import { useWorkbench, type Workbench } from "./state/workbench";
 
 const DOCK_MIN = 320;
@@ -21,6 +22,7 @@ const DOCK_MAX = 720;
 const DOCK_STEP = 24;
 
 function DockResizer({ cockpit }: { cockpit: RefObject<HTMLDivElement | null> }) {
+  const t = useT();
   const drag = useRef<{ startX: number; startWidth: number } | null>(null);
   const dockWidth = () => document.getElementById("dock")?.getBoundingClientRect().width || 0;
   const setWidth = (width: number) =>
@@ -33,7 +35,7 @@ function DockResizer({ cockpit }: { cockpit: RefObject<HTMLDivElement | null> })
       id="dock-resizer"
       role="separator"
       aria-orientation="vertical"
-      aria-label="调整检查器宽度"
+      aria-label={t("调整检查器宽度")}
       tabIndex={0}
       onPointerDown={(event) => {
         drag.current = { startX: event.clientX, startWidth: dockWidth() };
@@ -59,6 +61,7 @@ function DockResizer({ cockpit }: { cockpit: RefObject<HTMLDivElement | null> })
 }
 
 export function App({ workbench }: { workbench: Workbench }) {
+  const t = useT();
   const state = useWorkbench(workbench);
   const cockpit = useRef<HTMLDivElement>(null);
 
@@ -117,7 +120,10 @@ export function App({ workbench }: { workbench: Workbench }) {
             <footer className="stage-foot">
               <span id="foot-note">
                 {state.projection
-                  ? `${state.projection.run_id} · 最近事件 #${state.projection.latest_event_seq}`
+                  ? t("{run} · 最近事件 #{seq}", {
+                      run: state.projection.run_id,
+                      seq: state.projection.latest_event_seq,
+                    })
                   : "Ariadne v0.1"}
               </span>
             </footer>

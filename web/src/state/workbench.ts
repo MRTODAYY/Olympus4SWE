@@ -37,6 +37,8 @@ import type {
   WorkspaceMode,
   WorkspaceSummary,
 } from "../api/types";
+import { localized } from "../i18n/localized";
+import { tr } from "../i18n/translate";
 import {
   APPROVAL_LABELS,
   currentStage,
@@ -205,11 +207,12 @@ export interface WorkbenchState {
   dialog: DialogConfig | null;
 }
 
-const PHASE_TEXT: Partial<Record<StreamPhase, string>> = {
+/** Connection phase copy; proxied so `connectionText()` reads it in the active locale. */
+const PHASE_TEXT: Partial<Record<StreamPhase, string>> = localized<Partial<Record<StreamPhase, string>>>({
   loading: "正在加载快照…",
   missing: "找不到运行",
   reconnecting: "正在重连 · 保留上次确认",
-};
+});
 
 const byId = <T extends HTMLElement = HTMLElement>(id: string): T | null =>
   document.getElementById(id) as T | null;
@@ -301,7 +304,7 @@ export async function executeRunCommand(
   } catch (error) {
     return {
       kind: "network_error",
-      message: `操作请求失败：${(error as Error).message}`,
+      message: tr("操作请求失败：{error}", { error: (error as Error).message }),
     };
   }
   if (outcome.kind === "conflict") {
@@ -309,11 +312,13 @@ export async function executeRunCommand(
     return {
       kind: "conflict",
       projection: fresh,
-      message: `状态已同步至最新修订 (r${fresh ? fresh.state_revision : "?"})，请确认后重试`,
+      message: tr("状态已同步至最新修订 (r{rev})，请确认后重试", {
+        rev: fresh ? fresh.state_revision : "?",
+      }),
     };
   }
   if (outcome.kind === "rejected") {
-    return { kind: "rejected", message: `操作被拒绝：${outcome.error}` };
+    return { kind: "rejected", message: tr("操作被拒绝：{error}", { error: outcome.error }) };
   }
   return { kind: "ok", projection: outcome.projection };
 }
@@ -736,7 +741,7 @@ export class Workbench {
     try {
       await this.refreshWorkspaces();
     } catch {
-      this.toast("加载工作区列表失败");
+      this.toast(tr("加载工作区列表失败"));
     }
   }
 
@@ -746,10 +751,10 @@ export class Workbench {
     try {
       const response = await createWorkspace(body);
       await this.refreshWorkspaces();
-      this.toast(`已注册工作区 ${response.workspace.name}`);
+      this.toast(tr("已注册工作区 {name}", { name: response.workspace.name }));
       return { ok: true, workspace: response.workspace };
     } catch (error) {
-      return { ok: false, error: (error as Error).message || "注册工作区失败" };
+      return { ok: false, error: (error as Error).message || tr("注册工作区失败") };
     }
   }
 
@@ -760,10 +765,10 @@ export class Workbench {
       const response = await cloneWorkspace(body);
       await this.refreshWorkspaces();
       await this.refreshRuns().catch(() => undefined);
-      this.toast(`已克隆并注册工作区 ${response.workspace.name}`);
+      this.toast(tr("已克隆并注册工作区 {name}", { name: response.workspace.name }));
       return { ok: true, workspace: response.workspace };
     } catch (error) {
-      return { ok: false, error: (error as Error).message || "克隆工作区失败" };
+      return { ok: false, error: (error as Error).message || tr("克隆工作区失败") };
     }
   }
 
@@ -778,10 +783,10 @@ export class Workbench {
       if (resetFilter) {
         await this.refreshBoardRuns();
       }
-      this.toast("已移除工作区注册（本地文件与历史记录均保留）");
+      this.toast(tr("已移除工作区注册（本地文件与历史记录均保留）"));
       return true;
     } catch (error) {
-      this.toast(`移除工作区失败：${(error as Error).message}`);
+      this.toast(tr("移除工作区失败：{error}", { error: (error as Error).message }));
       return false;
     }
   }
@@ -818,7 +823,7 @@ export class Workbench {
 
   connectionText(): string {
     const s = this.state;
-    return s.submitting ? "正在提交…" : (s.phase && PHASE_TEXT[s.phase]) || "";
+    return s.submitting ? tr("正在提交…") : (s.phase && PHASE_TEXT[s.phase]) || "";
   }
 
   setPhase(phase: StreamPhase, force = false): void {
@@ -1196,7 +1201,7 @@ export class Workbench {
       const { [output.key]: _dropped, ...rest } = s.attemptDetails;
       s.attemptDetails = rest;
       this.commit(false);
-      this.toast("读取执行产物失败，可重新打开");
+      this.toast(tr("读取执行产物失败，可重新打开"));
     }
   }
 
@@ -1241,28 +1246,28 @@ export class Workbench {
       );
       if (blockers.length || blockingCritique) {
         this.openDialog({
-          title: `GoalSpec v${spec.version} 仍有未决阻断项`,
-          description: "请先处理阻断项。若要批准此版本，请填写接受风险的理由。",
-          label: "接受风险理由（必填）",
-          defaultValue: "首期范围已与业务确认，接受未决歧义风险先行冻结规格。",
+          title: tr("GoalSpec v{version} 仍有未决阻断项", { version: spec.version }),
+          description: tr("请先处理阻断项。若要批准此版本，请填写接受风险的理由。"),
+          label: tr("接受风险理由（必填）"),
+          defaultValue: tr("首期范围已与业务确认，接受未决歧义风险先行冻结规格。"),
           requireNonEmpty: true,
           onConfirm: (reason) =>
             this.sendCommand(
               { ...command, action: "approve_spec", accept_risk: true, reason },
-              "已带风险批准 GoalSpec，进入架构设计",
+              tr("已带风险批准 GoalSpec，进入架构设计"),
               runId,
             ),
         });
         return;
       }
-      await this.sendCommand(command, "已批准 GoalSpec，进入架构设计", runId);
+      await this.sendCommand(command, tr("已批准 GoalSpec，进入架构设计"), runId);
     } else if (command.action === "approve_design") {
-      await this.sendCommand(command, "已批准 DesignSpec，启动任务分解", runId);
+      await this.sendCommand(command, tr("已批准 DesignSpec，启动任务分解"), runId);
     } else {
       const message =
         this.state.projection?.workflow?.stop_after === "plan"
-          ? "已批准任务计划，蓝图编排已完成"
-          : "已批准任务计划，开始执行";
+          ? tr("已批准任务计划，蓝图编排已完成")
+          : tr("已批准任务计划，开始执行");
       await this.sendCommand(command, message, runId);
     }
   }
@@ -1292,24 +1297,27 @@ export class Workbench {
 
   togglePause(): Promise<void> {
     const action = this.state.projection?.status === "paused" ? "resume" : "pause";
-    return this.sendCommand({ action }, action === "pause" ? "已暂停新任务派发" : "已恢复任务编排调度");
+    return this.sendCommand(
+      { action },
+      action === "pause" ? tr("已暂停新任务派发") : tr("已恢复任务编排调度"),
+    );
   }
 
   promoteToExecute(): Promise<void> {
     return this.sendCommand(
       { action: "promote_to_execute", workflow_name: "full_sdlc_tdd" },
-      "已升级为 full_sdlc_tdd，启动沙盒代码执行",
+      tr("已升级为 full_sdlc_tdd，启动沙盒代码执行"),
     );
   }
 
   retryWorkflow(): Promise<void> {
-    return this.sendCommand({ action: "retry_workflow" }, "已从断点重新启动工作流");
+    return this.sendCommand({ action: "retry_workflow" }, tr("已从断点重新启动工作流"));
   }
 
   requestRevision(feedback: string): Promise<void> {
     return this.sendCommand(
       { action: "request_revision", feedback: feedback.trim() },
-      "已提交修订请求，工作流从需求对齐阶段重新启动",
+      tr("已提交修订请求，工作流从需求对齐阶段重新启动"),
     );
   }
 
@@ -1318,17 +1326,18 @@ export class Workbench {
     if (!projection) return;
     const targetRunId = projection.run_id;
     this.openDialog({
-      title: "追加工单",
-      description:
+      title: tr("追加工单"),
+      description: tr(
         "在已完成的运行上追加后续需求或修复反馈；工作流会从需求对齐阶段重新开始，并保留原有约束与工作区范围。",
-      label: "追加需求或修复反馈（必填）",
+      ),
+      label: tr("追加需求或修复反馈（必填）"),
       defaultValue: "",
-      placeholder: "例如：补充导出 Excel 的功能，并保持现有 API 兼容。",
+      placeholder: tr("例如：补充导出 Excel 的功能，并保持现有 API 兼容。"),
       requireNonEmpty: true,
       onConfirm: (feedback) =>
         this.sendCommand(
           { action: "reopen_run", feedback: feedback.trim() },
-          "已追加工单，工作流从需求对齐阶段重新启动",
+          tr("已追加工单，工作流从需求对齐阶段重新启动"),
           targetRunId,
         ),
     });
@@ -1345,7 +1354,7 @@ export class Workbench {
         hint: "",
         expected_state_revision: projection.state_revision,
       },
-      `已将任务 ${taskId} 重置为就绪 (READY)`,
+      tr("已将任务 {taskId} 重置为就绪 (READY)", { taskId }),
       projection.run_id,
     );
   }
@@ -1357,12 +1366,13 @@ export class Workbench {
     const targetRunId = projection.run_id;
     const expectedRevision = projection.state_revision;
     this.openDialog({
-      title: `向任务 ${taskId} 注入人工提示并重试`,
-      description:
+      title: tr("向任务 {taskId} 注入人工提示并重试", { taskId }),
+      description: tr(
         "提示原文保留在审计事件中，随下次隔离沙盒执行一并注入 Worker 上下文，不直接篡改需求契约。",
-      label: "注入提示内容",
+      ),
+      label: tr("注入提示内容"),
       defaultValue: "",
-      placeholder: "输入要注入的人工提示，例如需修复的边界或重试思路。",
+      placeholder: tr("输入要注入的人工提示，例如需修复的边界或重试思路。"),
       requireNonEmpty: true,
       onConfirm: (hint) =>
         this.sendCommand(
@@ -1372,7 +1382,7 @@ export class Workbench {
             hint,
             expected_state_revision: expectedRevision,
           },
-          `已向 ${taskId} 注入提示并重新排入就绪队列`,
+          tr("已向 {taskId} 注入提示并重新排入就绪队列", { taskId }),
           targetRunId,
         ),
     });
@@ -1385,12 +1395,13 @@ export class Workbench {
     const targetRunId = projection.run_id;
     const expectedRevision = projection.state_revision;
     this.openDialog({
-      title: `将任务 ${taskId} 改派给人工工程师`,
-      description:
+      title: tr("将任务 {taskId} 改派给人工工程师", { taskId }),
+      description: tr(
         "改派后人工提交的产物仍须经过相同的程序门禁与 Argus 独立复核才能成为已验收状态。",
-      label: "改派备注",
+      ),
+      label: tr("改派备注"),
       defaultValue: "",
-      placeholder: "输入改派备注，例如接手人与需关注的验收要点。",
+      placeholder: tr("输入改派备注，例如接手人与需关注的验收要点。"),
       requireNonEmpty: true,
       onConfirm: (note) =>
         this.sendCommand(
@@ -1400,7 +1411,7 @@ export class Workbench {
             note,
             expected_state_revision: expectedRevision,
           },
-          `已记录 ${taskId} 改派人工并回到就绪态`,
+          tr("已记录 {taskId} 改派人工并回到就绪态", { taskId }),
           targetRunId,
         ),
     });
@@ -1413,12 +1424,13 @@ export class Workbench {
     const targetRunId = projection.run_id;
     const expectedRevision = projection.state_revision;
     this.openDialog({
-      title: `接受风险完成任务 ${taskId}`,
-      description:
+      title: tr("接受风险完成任务 {taskId}", { taskId }),
+      description: tr(
         "必须填写明确理由。该决定与 Agent 建议分开存储，追踪矩阵标记为“未验证 · 人工接受”，绝不显示为“已验证”。",
-      label: "接受风险理由（必填）",
+      ),
+      label: tr("接受风险理由（必填）"),
       defaultValue: "",
-      placeholder: "输入接受风险的明确理由，例如影响范围与缓解措施。",
+      placeholder: tr("输入接受风险的明确理由，例如影响范围与缓解措施。"),
       requireNonEmpty: true,
       onConfirm: (reason) =>
         this.sendCommand(
@@ -1428,7 +1440,7 @@ export class Workbench {
             reason,
             expected_state_revision: expectedRevision,
           },
-          `已记录人工接受风险，${taskId} 标记为未验证 · 人工接受`,
+          tr("已记录人工接受风险，{taskId} 标记为未验证 · 人工接受", { taskId }),
           targetRunId,
         ),
     });
@@ -1439,7 +1451,7 @@ export class Workbench {
     if (!projection) return;
     const note = clarificationNote.trim();
     if (!Object.keys(answers).length && !note) {
-      this.toast("请先回答至少一项澄清问题或填写补充说明");
+      this.toast(tr("请先回答至少一项澄清问题或填写补充说明"));
       return;
     }
     const remaining = pendingAmbiguities(projection).filter(
@@ -1449,8 +1461,8 @@ export class Workbench {
     await this.sendCommand(
       { action: "clarify", answers, clarification_note: note },
       remaining.length
-        ? "已保存澄清进度，仍可继续回答剩余阻断项"
-        : "已提交澄清并生成新的 GoalSpec 版本",
+        ? tr("已保存澄清进度，仍可继续回答剩余阻断项")
+        : tr("已提交澄清并生成新的 GoalSpec 版本"),
     );
   }
 
@@ -1477,7 +1489,7 @@ export class Workbench {
     if (returnValue !== "confirm" || !pending) return;
     const text = (byId<HTMLTextAreaElement>("hitl-dialog-input")?.value || "").trim();
     if (pending.requireNonEmpty && !text) {
-      this.toast("必须填写理由或提示后才能提交");
+      this.toast(tr("必须填写理由或提示后才能提交"));
       return;
     }
     await pending.onConfirm(text);
@@ -1495,7 +1507,7 @@ export class Workbench {
         this.refreshWorkspaces().catch(() => undefined),
       ]);
     } catch {
-      this.toast("加载工作流或提供方失败");
+      this.toast(tr("加载工作流或提供方失败"));
     }
   }
 
@@ -1509,14 +1521,14 @@ export class Workbench {
     const s = this.state;
     const rawInput = form.input.trim();
     if (!rawInput) {
-      return { ok: false, error: "请先填写需求原文或导入文件" };
+      return { ok: false, error: tr("请先填写需求原文或导入文件") };
     }
     const demoId = form.demoId.trim();
     const selectedDemo = demoId ? s.options?.demos.find((item) => item.id === demoId) : undefined;
     const mode = demoId ? "brownfield" : form.workspaceMode;
 
     if (!demoId && mode === "greenfield" && !form.greenfieldPath.trim()) {
-      return { ok: false, error: "Greenfield 模式必须填写目标目录路径" };
+      return { ok: false, error: tr("Greenfield 模式必须填写目标目录路径") };
     }
     if (
       !demoId &&
@@ -1524,7 +1536,7 @@ export class Workbench {
       form.workspaceId === "__custom__" &&
       !form.customWorkspaceRoot.trim()
     ) {
-      return { ok: false, error: "请填写现有本地仓库目录路径" };
+      return { ok: false, error: tr("请填写现有本地仓库目录路径") };
     }
 
     const provider = form.provider || "auto";
@@ -1589,14 +1601,14 @@ export class Workbench {
       }
     }
 
-    if (s.submitting) return { ok: false, error: "正在提交中，请稍候" };
+    if (s.submitting) return { ok: false, error: tr("正在提交中，请稍候") };
     s.submitting = true;
     this.renderConnection();
     let runId: string;
     try {
       runId = (await createRun(payload)).run_id;
     } catch (error) {
-      return { ok: false, error: (error as Error).message || "未知错误" };
+      return { ok: false, error: (error as Error).message || tr("未知错误") };
     } finally {
       s.submitting = false;
       this.renderConnection();
@@ -1613,7 +1625,7 @@ export class Workbench {
     } else {
       this.loadRun(runId);
     }
-    this.toast(`已接收编排 ${runId}`);
+    this.toast(tr("已接收编排 {runId}", { runId }));
     return { ok: true, runId };
   }
 

@@ -2,6 +2,9 @@ import { useEffect, useState, type ReactNode } from "react";
 
 import type { DagNode, DeliveryAcceptance, DeliveryCriterion, RunProjection } from "../api/types";
 import { deliveryLogUrl, fetchProductArtifactText, productArtifactUrl } from "../api/client";
+import { useT } from "../i18n";
+import { localized } from "../i18n/localized";
+import { tr } from "../i18n/translate";
 import {
   DELIVERY_STATUS,
   localizeError,
@@ -9,8 +12,8 @@ import {
   POST_DAG_OUTCOME,
   POST_DAG_PHASE,
   POST_DAG_STATUS,
-  RETRY_MESSAGE,
-  RETRY_NEXT_STEP,
+  retryMessage,
+  retryNextStep,
   statusMeta,
   taskDisplayStatus,
   type Tab,
@@ -29,11 +32,16 @@ interface DockContent {
   receipt?: ReactNode;
 }
 
-const TAB_LABELS: Record<Tab, string> = { overview: "概览", artifacts: "产物与审查", events: "事件日志" };
+const TAB_LABELS: Record<Tab, string> = localized({
+  overview: "概览",
+  artifacts: "产物与审查",
+  events: "事件日志",
+});
 
 function Tabs({ workbench, active }: { workbench: Workbench; active: Tab }) {
+  const t = useT();
   return (
-    <div className="tabs" role="tablist" aria-label="任务详情视图切换">
+    <div className="tabs" role="tablist" aria-label={t("任务详情视图切换")}>
       {(Object.keys(TAB_LABELS) as Tab[]).map((tab) => (
         <button
           type="button"
@@ -65,7 +73,11 @@ function EventRows({ events }: { events: RunProjection["events"] }) {
   );
 }
 
-const TOOL_STATUS_LABELS: Record<string, string> = { ok: "成功", error: "出错", denied: "已拦截" };
+const TOOL_STATUS_LABELS: Record<string, string> = localized({
+  ok: "成功",
+  error: "出错",
+  denied: "已拦截",
+});
 
 function activityPreview(state: WorkbenchState, task: DagNode): string {
   if (state.projection?.status !== "running" || task.status !== "running") return "";
@@ -76,20 +88,21 @@ function activityPreview(state: WorkbenchState, task: DagNode): string {
 }
 
 function LiveProgressCard({ state, task }: { state: WorkbenchState; task: DagNode }) {
+  const t = useT();
   const progress = task.live_progress;
   if (!progress?.driver_name && !progress?.last_event_at) return null;
   const current = progress.current_tool;
   const preview = activityPreview(state, task);
   return (
-    <Card title={task.status === "running" ? "实时执行" : "最近执行"}>
+    <Card title={task.status === "running" ? t("实时执行") : t("最近执行")}>
       <KeyValues>
         {progress.driver_name ? (
-          <Row label="驱动" mono>
+          <Row label={t("驱动")} mono>
             {progress.driver_name}
           </Row>
         ) : null}
         {current ? (
-          <Row label="当前工具" mono>
+          <Row label={t("当前工具")} mono>
             {`${current.tool} · ${current.target_hint}`}
           </Row>
         ) : null}
@@ -109,13 +122,14 @@ function LiveProgressCard({ state, task }: { state: WorkbenchState; task: DagNod
   );
 }
 
-const RETRY_LABELS: Record<string, string> = {
-  started: RETRY_MESSAGE,
+const RETRY_LABELS: Record<string, string> = localized({
+  started: "调用超时，正在自动重试",
   recovered: "重试成功，调用已恢复",
   failed: "本次自动重试失败",
-};
+});
 
 function TaskBody({ workbench, state, projection, task }: { workbench: Workbench; state: WorkbenchState; projection: RunProjection; task: DagNode }) {
+  const t = useT();
   if (state.activeTab === "artifacts") {
     return <RecordedArtifactCards artifacts={task.artifacts || {}} manifest={task.manifest_md} />;
   }
@@ -125,7 +139,7 @@ function TaskBody({ workbench, state, projection, task }: { workbench: Workbench
     return (
       <>
         {retries.length ? (
-          <Card title="调用重试记录">
+          <Card title={t("调用重试记录")}>
             <KeyValues>
               {retries.map((event) => (
                 <Row label={`#${event.event_seq} · ${event.actor}`} key={event.event_seq}>
@@ -136,7 +150,7 @@ function TaskBody({ workbench, state, projection, task }: { workbench: Workbench
           </Card>
         ) : null}
         <div className="event-log scroller">
-          {events.length ? <EventRows events={events} /> : <Notice level="info">暂无事件</Notice>}
+          {events.length ? <EventRows events={events} /> : <Notice level="info">{t("暂无事件")}</Notice>}
         </div>
       </>
     );
@@ -146,10 +160,20 @@ function TaskBody({ workbench, state, projection, task }: { workbench: Workbench
     .join("\n");
   return (
     <>
-      {task.provider_retry ? <Notice level="warn">{`${RETRY_MESSAGE}。下一步：${RETRY_NEXT_STEP}。`}</Notice> : null}
+      {task.provider_retry ? (
+        <Notice level="warn">
+          {tr("{message}。下一步：{nextStep}。", {
+            message: retryMessage(),
+            nextStep: retryNextStep(),
+          })}
+        </Notice>
+      ) : null}
       {task.blocker ? (
         <Notice level="bad">
-          {`受影响任务：${task.blocker.affected_task_ids.join("、")}。原因：${task.blocker.detail}`}
+          {t("受影响任务：{tasks}。原因：{reason}", {
+            tasks: task.blocker.affected_task_ids.join(t("、")),
+            reason: task.blocker.detail,
+          })}
         </Notice>
       ) : null}
       {(task.blocked_by || []).map((taskId) => {
@@ -166,48 +190,58 @@ function TaskBody({ workbench, state, projection, task }: { workbench: Workbench
                 data-blocker-task-id={taskId}
                 onClick={() => workbench.showBlockerTask(taskId)}
               >
-                {`查看 ${taskId} 的处理操作`}
+                {t("查看 {taskId} 的处理操作", { taskId })}
               </button>
             }
           >
-            {`依赖任务 ${taskId} 受阻：${blocker.detail}`}
+            {t("依赖任务 {taskId} 受阻：{detail}", { taskId, detail: blocker.detail })}
           </Notice>
         );
       })}
       <LiveProgressCard state={state} task={task} />
-      <Card title="执行概览">
+      <Card title={t("执行概览")}>
         <KeyValues>
-          <Row label="任务目标">{task.objective}</Row>
-          <Row label="执行者" mono>
+          <Row label={t("任务目标")}>{task.objective}</Row>
+          <Row label={t("执行者")} mono>
             {task.executor}
           </Row>
-          <Row label="角色 / 类型" mono>
+          <Row label={t("角色 / 类型")} mono>
             {`${task.role || "engineer"} / ${task.kind || "implement"}`}
           </Row>
-          <Row label="交付物">{(task.deliverables || []).join(", ") || "（未声明）"}</Row>
-          <Row label="前置任务" mono>
-            {(task.depends_on || []).join(", ") || "（无）"}
+          <Row label={t("交付物")}>{(task.deliverables || []).join(", ") || t("（未声明）")}</Row>
+          <Row label={t("前置任务")} mono>
+            {(task.depends_on || []).join(", ") || t("（无）")}
           </Row>
-          <Row label="写入范围" mono>
-            {(task.write_scope || []).join(", ") || "（只读）"}
+          <Row label={t("写入范围")} mono>
+            {(task.write_scope || []).join(", ") || t("（只读）")}
           </Row>
-          <Row label="诊断" mono>
-            {`${task.diagnostic_tool} → ${task.diagnostic_output}`}
+          <Row label={t("诊断")} mono>
+            {`${task.diagnostic_tool} → ${t(task.diagnostic_output)}`}
           </Row>
-          <Row label="归因">{task.diagnostic_attribution}</Row>
+          <Row label={t("归因")}>{t(task.diagnostic_attribution)}</Row>
         </KeyValues>
       </Card>
-      {task.accepted_risk_reason ? <Notice level="warn">{`未验证 · 人工接受：${task.accepted_risk_reason}`}</Notice> : null}
+      {task.accepted_risk_reason ? (
+        <Notice level="warn">
+          {t("未验证 · 人工接受：{reason}", { reason: task.accepted_risk_reason })}
+        </Notice>
+      ) : null}
       {task.review_deferred ? (
-        <Notice level="info">单任务命令门禁已通过，独立审查已延后至 Post-DAG 全局交付复核。</Notice>
+        <Notice level="info">
+          {t("单任务命令门禁已通过，独立审查已延后至 Post-DAG 全局交付复核。")}
+        </Notice>
       ) : null}
       {task.escape_hatch_findings && task.escape_hatch_findings.length ? (
-        <Card title={`0-Token 逃生舱预检拦截（累计 ${task.escape_hatch_rejections || task.escape_hatch_findings.length} 次）`}>
+        <Card
+          title={t("0-Token 逃生舱预检拦截（累计 {count} 次）", {
+            count: task.escape_hatch_rejections || task.escape_hatch_findings.length,
+          })}
+        >
           <pre className="code-block scroller">{task.escape_hatch_findings.join("\n")}</pre>
         </Card>
       ) : null}
-      <Card title="验收检查">
-        <pre className="code-block scroller">{checks || "（暂无验收检查）"}</pre>
+      <Card title={t("验收检查")}>
+        <pre className="code-block scroller">{checks || t("（暂无验收检查）")}</pre>
       </Card>
     </>
   );
@@ -222,22 +256,29 @@ function taskDock(workbench: Workbench, state: WorkbenchState, projection: RunPr
     stages: (
       <>
         <Badge variant={meta.variant}>{`${meta.glyph} ${meta.label}`}</Badge>
-        <Badge>{`尝试 ${task.attempt} / ${task.max_cycles}`}</Badge>
-        <Badge>{`审查 ${task.review_cycle} 轮`}</Badge>
-        {task.review_deferred ? <Badge variant="live">延后至 Post-DAG</Badge> : null}
+        <Badge>{tr("尝试 {attempt} / {max}", { attempt: task.attempt, max: task.max_cycles })}</Badge>
+        <Badge>{tr("审查 {round} 轮", { round: task.review_cycle })}</Badge>
+        {task.review_deferred ? <Badge variant="live">{tr("延后至 Post-DAG")}</Badge> : null}
         {task.escape_hatch_rejections ? (
-          <Badge variant="warn">{`逃生舱拦截 ×${task.escape_hatch_rejections}`}</Badge>
+          <Badge variant="warn">{tr("逃生舱拦截 ×{count}", { count: task.escape_hatch_rejections })}</Badge>
         ) : null}
         <Badge>{task.executor}</Badge>
-        <Badge>{`角色 ${task.role || "engineer"}`}</Badge>
-        <Badge>{`类型 ${task.kind || "implement"}`}</Badge>
+        <Badge>{tr("角色 {role}", { role: task.role || "engineer" })}</Badge>
+        <Badge>{tr("类型 {kind}", { kind: task.kind || "implement" })}</Badge>
       </>
     ),
-    subpane: <SubPane title={`${task.task_id} · 沙盒终端`} tools={stream} tailLines={task.terminal_lines} live={live} />,
+    subpane: (
+      <SubPane
+        title={tr("{taskId} · 沙盒终端", { taskId: task.task_id })}
+        tools={stream}
+        tailLines={task.terminal_lines}
+        live={live}
+      />
+    ),
     tools: stream.length ? (
       stream.map((entry, index) => <ToolRow tool={entry} key={index} />)
     ) : (
-      <Notice level="info">该任务尚未执行工具调用</Notice>
+      <Notice level="info">{tr("该任务尚未执行工具调用")}</Notice>
     ),
     tabs: <Tabs workbench={workbench} active={state.activeTab} />,
     body: <TaskBody workbench={workbench} state={state} projection={projection} task={task} />,
@@ -268,10 +309,10 @@ function workflowDock(projection: RunProjection, name: string): DockContent {
     stages: (
       <>
         <Badge variant={meta.variant}>{`${meta.glyph} ${meta.label}`}</Badge>
-        <Badge>{`类型 ${node?.kind || "node"}`}</Badge>
-        {node?.routed ? <Badge variant="warn">路由分叉</Badge> : <Badge>直连节点</Badge>}
-        <Badge>{`最大访问 ${node?.max_visits || 1}`}</Badge>
-        {node?.on_error ? <Badge variant="bad">{`失败 → ${node.on_error}`}</Badge> : null}
+        <Badge>{tr("类型 {kind}", { kind: node?.kind || "node" })}</Badge>
+        {node?.routed ? <Badge variant="warn">{tr("路由分叉")}</Badge> : <Badge>{tr("直连节点")}</Badge>}
+        <Badge>{tr("最大访问 {count}", { count: node?.max_visits || 1 })}</Badge>
+        {node?.on_error ? <Badge variant="bad">{tr("失败 → {target}", { target: node.on_error })}</Badge> : null}
       </>
     ),
     body: (
@@ -279,22 +320,22 @@ function workflowDock(projection: RunProjection, name: string): DockContent {
         {workflow.failed_node === name && workflow.last_error ? (
           <Notice level="bad">{localizeError(workflow.last_error)}</Notice>
         ) : null}
-        <Card title="节点定义">
+        <Card title={tr("节点定义")}>
           <KeyValues>
-            <Row label="节点状态" mono>
+            <Row label={tr("节点状态")} mono>
               {status}
             </Row>
-            <Row label="入边" mono>
-              {incoming.map((edge) => edge.source).join(", ") || "（起始节点）"}
+            <Row label={tr("入边")} mono>
+              {incoming.map((edge) => edge.source).join(", ") || tr("（起始节点）")}
             </Row>
-            <Row label="出边" mono>
-              {outgoing.map((edge) => `${edge.target}${edge.conditional ? "（条件）" : ""}`).join(", ") || "（终点）"}
+            <Row label={tr("出边")} mono>
+              {outgoing.map((edge) => `${edge.target}${edge.conditional ? tr("（条件）") : ""}`).join(", ") || tr("（终点）")}
             </Row>
           </KeyValues>
         </Card>
-        <Card title="节点事件">
+        <Card title={tr("节点事件")}>
           <div className="event-log scroller">
-            {events.length ? <EventRows events={events} /> : <p className="view-note">该节点暂无事件</p>}
+            {events.length ? <EventRows events={events} /> : <p className="view-note">{tr("该节点暂无事件")}</p>}
           </div>
         </Card>
       </>
@@ -307,26 +348,26 @@ function deliveryDock(projection: RunProjection, review: DeliveryAcceptance, row
   const logUrl = deliveryLogUrl(projection.run_id, evidence.event_seq, evidence.check_position);
   const [label, variant] = DELIVERY_STATUS[row.status] || DELIVERY_STATUS.unverified;
   return {
-    title: `${row.requirement_id} · 条件 ${row.criterion_index}`,
+    title: tr("{id} · 条件 {index}", { id: row.requirement_id, index: row.criterion_index }),
     stages: <Badge variant={variant}>{label}</Badge>,
     body: (
       <>
-        <Card title="证据引用">
+        <Card title={tr("证据引用")}>
           <KeyValues>
-            <Row label="验收条件">{row.text}</Row>
+            <Row label={tr("验收条件")}>{row.text}</Row>
             <Row label={`GoalSpec v${review.spec_version}`} mono>
               {review.spec_hash}
             </Row>
-            <Row label="交付版本" mono>
+            <Row label={tr("交付版本")} mono>
               {evidence.delivery_version}
             </Row>
-            <Row label="执行记录">{`#${evidence.event_seq} · 退出码 ${evidence.exit_code}`}</Row>
+            <Row label={tr("执行记录")}>{tr("#{seq} · 退出码 {code}", { seq: evidence.event_seq, code: evidence.exit_code })}</Row>
           </KeyValues>
         </Card>
-        <Card title="执行日志">
+        <Card title={tr("执行日志")}>
           <pre className="code-block scroller">{evidence.log}</pre>{" "}
           <a className="btn btn-quiet" href={logUrl} target="_blank" rel="noopener">
-            打开完整日志
+            {tr("打开完整日志")}
           </a>
         </Card>
       </>
@@ -349,6 +390,7 @@ function ProductArtifactPreview({
   cacheKey: string;
   version?: number;
 }) {
+  const t = useT();
   const [content, setContent] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {
@@ -362,7 +404,7 @@ function ProductArtifactPreview({
       })
       .catch((err) => {
         if (!active) return;
-        setError((err as Error).message || "读取产物失败");
+        setError((err as Error).message || t("读取产物失败"));
       });
     return () => {
       active = false;
@@ -374,9 +416,9 @@ function ProductArtifactPreview({
       {error ? (
         <Notice level="bad">{error}</Notice>
       ) : content === null ? (
-        <p className="card-note">正在读取产物…</p>
+        <p className="card-note">{t("正在读取产物…")}</p>
       ) : (
-        <pre className="code-block scroller">{content || "（空文件）"}</pre>
+        <pre className="code-block scroller">{content || t("（空文件）")}</pre>
       )}
       <a className="btn btn-quiet" href={url} target="_blank" rel="noopener">
         {linkLabel}
@@ -386,26 +428,27 @@ function ProductArtifactPreview({
 }
 
 function ProductScreenshotCard({ shotUrl }: { shotUrl: string }) {
+  const t = useT();
   const [unavailable, setUnavailable] = useState(false);
   useEffect(() => {
     setUnavailable(false);
   }, [shotUrl]);
   return (
-    <Card title="实机首页截图 (home.png)">
+    <Card title={t("实机首页截图 (home.png)")}>
       {unavailable ? (
-        <Notice level="info">当前轮次截图已被新一轮验证更新，等待最新验收结果同步。</Notice>
+        <Notice level="info">{t("当前轮次截图已被新一轮验证更新，等待最新验收结果同步。")}</Notice>
       ) : (
         <a
           className="product-dock-shot"
           href={shotUrl}
           target="_blank"
           rel="noopener"
-          title="在新标签页打开原图"
+          title={t("在新标签页打开原图")}
         >
           <img
             key={shotUrl}
             src={shotUrl}
-            alt="实机首页截图"
+            alt={t("实机首页截图")}
             onError={() => setUnavailable(true)}
           />
         </a>
@@ -437,29 +480,31 @@ function productDock(projection: RunProjection): DockContent {
   const cacheKey = `${projection.state_revision}:${verification?.event_seq ?? 0}`;
   const verdict = postDag?.latest_argus_verdict ?? null;
   return {
-    title: "实机交付验收 · Product E2E",
+    title: tr("实机交付验收 · Product E2E"),
     stages: (
       <>
         {verification ? (
           <Badge variant={verification.passed ? "ok" : "bad"}>
-            {verification.passed ? "✓ 实机通过" : "✕ 实机未通过"}
+            {verification.passed ? tr("✓ 实机通过") : tr("✕ 实机未通过")}
           </Badge>
         ) : null}
         {postDag ? <Badge variant={postDagVariant}>{postDagLabel}</Badge> : null}
-        {postDag ? <Badge>{`${postDag.total_rounds} 轮记录`}</Badge> : null}
+        {postDag ? <Badge>{tr("{count} 轮记录", { count: postDag.total_rounds })}</Badge> : null}
       </>
     ),
     body: (
       <>
         {verification ? (
           <>
-            <Card title="实机验证摘要">
+            <Card title={tr("实机验证摘要")}>
               <KeyValues>
-                <Row label="结论">{verification.summary || (verification.passed ? "通过" : "未通过")}</Row>
-                <Row label="记录事件" mono>
+                <Row label={tr("结论")}>
+                  {verification.summary || (verification.passed ? tr("通过") : tr("未通过"))}
+                </Row>
+                <Row label={tr("记录事件")} mono>
                   {`#${verification.event_seq}`}
                 </Row>
-                <Row label="检查数" mono>
+                <Row label={tr("检查数")} mono>
                   {String((verification.checks || []).length)}
                 </Row>
               </KeyValues>
@@ -472,8 +517,8 @@ function productDock(projection: RunProjection): DockContent {
               <ProductArtifactPreview
                 runId={projection.run_id}
                 kind="boot_log"
-                title="启动日志 (boot.log)"
-                linkLabel="打开完整启动日志"
+                title={tr("启动日志 (boot.log)")}
+                linkLabel={tr("打开完整启动日志")}
                 cacheKey={cacheKey}
                 version={verification.event_seq}
               />
@@ -482,8 +527,8 @@ function productDock(projection: RunProjection): DockContent {
               <ProductArtifactPreview
                 runId={projection.run_id}
                 kind="report"
-                title="验证报告 (report.json)"
-                linkLabel="打开完整验证报告"
+                title={tr("验证报告 (report.json)")}
+                linkLabel={tr("打开完整验证报告")}
                 cacheKey={cacheKey}
                 version={verification.event_seq}
               />
@@ -491,14 +536,14 @@ function productDock(projection: RunProjection): DockContent {
           </>
         ) : null}
         {verdict ? (
-          <Card title="Argus 全局交付复核">
+          <Card title={tr("Argus 全局交付复核")}>
             <KeyValues>
-              <Row label="结论">
+              <Row label={tr("结论")}>
                 <Badge variant={verdict.passed ? "ok" : "bad"}>
-                  {verdict.passed ? "✓ 通过" : "✕ 未通过"}
+                  {verdict.passed ? tr("✓ 通过") : tr("✕ 未通过")}
                 </Badge>
               </Row>
-              <Row label="摘要">{verdict.summary || "（无摘要）"}</Row>
+              <Row label={tr("摘要")}>{verdict.summary || tr("（无摘要）")}</Row>
             </KeyValues>
             {verdict.findings && verdict.findings.length ? (
               <pre className="code-block scroller">
@@ -513,7 +558,7 @@ function productDock(projection: RunProjection): DockContent {
           </Card>
         ) : null}
         {postDag && postDag.rounds && postDag.rounds.length ? (
-          <Card title="Post-DAG 轮次历史">
+          <Card title={tr("Post-DAG 轮次历史")}>
             <KeyValues>
               {postDag.rounds.map((round) => {
                 const [label, variant] =
@@ -539,7 +584,7 @@ function dockContent(workbench: Workbench, state: WorkbenchState): DockContent {
   const projection = state.projection;
   if (!projection) {
     return {
-      title: "节点执行详情",
+      title: tr("节点执行详情"),
       stages: null,
       tabs: <Tabs workbench={workbench} active={state.activeTab} />,
       body: null,
@@ -562,24 +607,25 @@ function dockContent(workbench: Workbench, state: WorkbenchState): DockContent {
   const focusNode = workflow.failed_node || workflow.current_node || workflow.graph?.nodes?.[0]?.name;
   if (focusNode) return workflowDock(projection, focusNode);
   return {
-    title: "节点执行详情",
+    title: tr("节点执行详情"),
     stages: null,
-    body: <p className="view-note">点击工作流或任务节点以查看事件与产物</p>,
+    body: <p className="view-note">{tr("点击工作流或任务节点以查看事件与产物")}</p>,
   };
 }
 
 export function InspectorDock({ workbench, state }: { workbench: Workbench; state: WorkbenchState }) {
+  const t = useT();
   const content = dockContent(workbench, state);
   return (
-    <aside id="dock" className="scroller" aria-label="任务检查器">
+    <aside id="dock" className="scroller" aria-label={t("任务检查器")}>
       <header className="dock-head">
         <div>
-          <span className="dock-kicker">检查器</span>
+          <span className="dock-kicker">{t("检查器")}</span>
           <h2 className="dock-title" id="dock-title" tabIndex={-1}>
             {content.title}
           </h2>
         </div>
-        <button type="button" className="btn btn-quiet" id="btn-dock-close" aria-label="收起检查器" onClick={() => workbench.closeDock()}>
+        <button type="button" className="btn btn-quiet" id="btn-dock-close" aria-label={t("收起检查器")} onClick={() => workbench.closeDock()}>
           ⇥
         </button>
       </header>

@@ -1,4 +1,6 @@
 import type { PantheonGod, PantheonSeatSummary } from "../api/types";
+import { useT } from "../i18n";
+import { tr } from "../i18n/translate";
 import { GOD_META, shortOracleCode } from "../lib/labels";
 import type { Workbench, WorkbenchState } from "../state/workbench";
 import { GodAvatar, type GodAvatarManifestOverride } from "./GodAvatar";
@@ -43,6 +45,7 @@ export function PantheonDock({
   state,
   manifestOverride,
 }: PantheonDockProps) {
+  const t = useT();
   const seats = normalizeSeats(state.pantheon);
   const activeFilterMeta = state.selectedGodFilter
     ? GOD_META[state.selectedGodFilter]
@@ -52,15 +55,15 @@ export function PantheonDock({
     <footer
       id="pantheon-dock"
       className="pantheon-dock"
-      aria-label="Pantheon Live Pipeline"
+      aria-label={t("Pantheon Live Pipeline")}
     >
       <div className="pantheon-dock-head">
-        <span className="pantheon-dock-label">PANTHEON · LIVE PIPELINE</span>
+        <span className="pantheon-dock-label">{t("PANTHEON · LIVE PIPELINE")}</span>
         <span className="pantheon-dock-rule" aria-hidden="true" />
         {activeFilterMeta ? (
           <div className="pantheon-filter-status" role="status">
             <span className="pantheon-filter-copy">
-              Filtered: <strong>{activeFilterMeta.name}</strong> ({activeFilterMeta.role})
+              {t("Filtered:")} <strong>{activeFilterMeta.name}</strong> ({activeFilterMeta.role})
             </span>
             <button
               type="button"
@@ -68,7 +71,7 @@ export function PantheonDock({
               className="btn btn-quiet pantheon-clear-btn"
               onClick={() => workbench.setGodFilter(null)}
             >
-              Clear filter
+              {t("Clear filter")}
             </button>
           </div>
         ) : null}
@@ -77,7 +80,7 @@ export function PantheonDock({
       <div
         className="pantheon-seats"
         role="group"
-        aria-label="Pantheon pipeline seats"
+        aria-label={t("Pantheon pipeline seats")}
       >
         {seats.map((seat) => {
           const meta = GOD_META[seat.god];
@@ -85,7 +88,7 @@ export function PantheonDock({
           const isHovered = state.hoveredGod === seat.god;
           const visibleIds = seat.oracle_ids.slice(0, MAX_VISIBLE_CHIPS);
           const overflowCount = Math.max(0, seat.oracle_ids.length - visibleIds.length);
-          const roleText = seat.role_label || meta.role;
+          const roleText = tr(seat.role_label || meta.role);
 
           return (
             <button
@@ -97,7 +100,7 @@ export function PantheonDock({
               data-selected={isSelected ? "true" : undefined}
               data-hovered={isHovered ? "true" : undefined}
               aria-pressed={isSelected ? "true" : "false"}
-              aria-label={`${meta.name}, ${roleText}, ${seat.waiting_count} waiting, ${seat.active_count} active`}
+              aria-label={`${meta.name}, ${roleText}, ${seat.waiting_count} ${t("项待裁决")}, ${seat.active_count} ${t("个进行中")}`}
               onClick={() => workbench.setGodFilter(seat.god)}
               onMouseEnter={() => workbench.setHoveredGod(seat.god)}
               onMouseLeave={() => workbench.setHoveredGod(null)}
@@ -116,7 +119,7 @@ export function PantheonDock({
                     className="pantheon-count-badge"
                     data-tone="warn"
                     data-count-kind="waiting"
-                    title={`${seat.waiting_count} awaiting your ruling`}
+                    title={t("{count} 项待你裁决", { count: seat.waiting_count })}
                   >
                     {seat.waiting_count}
                   </span>
@@ -130,7 +133,7 @@ export function PantheonDock({
                     }
                     data-tone="live"
                     data-count-kind="active"
-                    title={`${seat.active_count} in flight`}
+                    title={t("{count} 个进行中任务", { count: seat.active_count })}
                   >
                     {seat.active_count}
                   </span>
@@ -166,7 +169,7 @@ export function PantheonDock({
                       ) : null}
                     </>
                   ) : (
-                    <span className="pantheon-idle-caption">Idle</span>
+                    <span className="pantheon-idle-caption">{t("Idle")}</span>
                   )}
                 </div>
               </div>

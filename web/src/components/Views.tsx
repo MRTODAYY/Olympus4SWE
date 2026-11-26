@@ -1,11 +1,13 @@
 import { Fragment, type CSSProperties } from "react";
 
-import { formatDurationMs, statusMeta } from "../lib/labels";
+import { useT } from "../i18n";
+import { formatDurationMs, localizeComposite, localizeEvidenceNote, statusMeta } from "../lib/labels";
 import type { Workbench, WorkbenchState } from "../state/workbench";
 import { DesignSpecCard, GoalSpecCard } from "./spec";
 import { Badge, Notice } from "./ui";
 
 export function DesignView({ state }: { state: WorkbenchState }) {
+  const t = useT();
   const projection = state.projection;
   const spec = projection?.spec;
   const design = projection?.design;
@@ -13,19 +15,19 @@ export function DesignView({ state }: { state: WorkbenchState }) {
     <section className="view" data-pane="design" id="view-design" aria-labelledby="design-title" hidden={state.view !== "design"}>
       <header className="view-head">
         <h2 className="view-title" id="design-title">
-          架构规格
+          {t("架构规格")}
         </h2>
         <Badge
           id="design-badge"
           variant={design && projection?.design_approved ? "ok" : spec ? "warn" : "muted"}
         >
-          {design ? `DesignSpec v${design.version || 1}` : spec ? `GoalSpec v${spec.version || 1}` : "等待规格"}
+          {design ? `DesignSpec v${design.version || 1}` : spec ? `GoalSpec v${spec.version || 1}` : t("等待规格")}
         </Badge>
       </header>
       <div className="design-grid" id="design-body">
         {!projection ? null : !spec && !design ? (
           <Notice level="info">
-            当前运行尚未生成 GoalSpec / DesignSpec。先新建编排提交需求，或批准当前关口后继续推进。
+            {t("当前运行尚未生成 GoalSpec / DesignSpec。先新建编排提交需求，或批准当前关口后继续推进。")}
           </Notice>
         ) : (
           <>
@@ -39,6 +41,7 @@ export function DesignView({ state }: { state: WorkbenchState }) {
 }
 
 export function MatrixView({ workbench, state }: { workbench: Workbench; state: WorkbenchState }) {
+  const t = useT();
   const rows = state.projection?.traceability_matrix || [];
   const counts = { verified: 0, running: 0, failed: 0, risk: 0, pending: 0 };
   rows.forEach((row) => {
@@ -52,26 +55,26 @@ export function MatrixView({ workbench, state }: { workbench: Workbench; state: 
     <section className="view" data-pane="matrix" id="view-matrix" aria-labelledby="matrix-title" hidden={state.view !== "matrix"}>
       <header className="view-head">
         <h2 className="view-title" id="matrix-title">
-          需求追踪矩阵
+          {t("需求追踪矩阵")}
         </h2>
-        <div className="stage-pills" id="fr-strip" aria-label="需求验证状态汇总">
-          {counts.verified ? <Badge variant="ok">{`✓ 已验证 ${counts.verified}`}</Badge> : null}
-          {counts.running ? <Badge variant="live">{`▶ 验证中 ${counts.running}`}</Badge> : null}
-          {counts.failed ? <Badge variant="bad">{`✕ 失败 ${counts.failed}`}</Badge> : null}
-          {counts.risk ? <Badge variant="warn">{`⚠ 人工接受 ${counts.risk}`}</Badge> : null}
-          {counts.pending ? <Badge variant="muted">{`◷ 待验证 ${counts.pending}`}</Badge> : null}
+        <div className="stage-pills" id="fr-strip" aria-label={t("需求验证状态汇总")}>
+          {counts.verified ? <Badge variant="ok">{t("✓ 已验证 {count}", { count: counts.verified })}</Badge> : null}
+          {counts.running ? <Badge variant="live">{t("▶ 验证中 {count}", { count: counts.running })}</Badge> : null}
+          {counts.failed ? <Badge variant="bad">{t("✕ 失败 {count}", { count: counts.failed })}</Badge> : null}
+          {counts.risk ? <Badge variant="warn">{t("⚠ 人工接受 {count}", { count: counts.risk })}</Badge> : null}
+          {counts.pending ? <Badge variant="muted">{t("◷ 待验证 {count}", { count: counts.pending })}</Badge> : null}
         </div>
       </header>
       <div className="table-wrapper scroller" tabIndex={0} role="region" aria-labelledby="matrix-caption">
         <table className="matrix-table">
-          <caption id="matrix-caption">需求、设计模块、任务与验收结果四级追踪表</caption>
+          <caption id="matrix-caption">{t("需求、设计模块、任务与验收结果四级追踪表")}</caption>
           <thead>
             <tr>
-              <th scope="col">需求编号</th>
-              <th scope="col">来源与需求描述</th>
-              <th scope="col">设计模块</th>
-              <th scope="col">承接任务</th>
-              <th scope="col">验收状态与证据</th>
+              <th scope="col">{t("需求编号")}</th>
+              <th scope="col">{t("来源与需求描述")}</th>
+              <th scope="col">{t("设计模块")}</th>
+              <th scope="col">{t("承接任务")}</th>
+              <th scope="col">{t("验收状态与证据")}</th>
             </tr>
           </thead>
           <tbody id="matrix-tbody">
@@ -122,8 +125,8 @@ export function MatrixView({ workbench, state }: { workbench: Workbench; state: 
                       : "—"}
                   </td>
                   <td>
-                    <Badge variant={meta.variant}>{`${meta.glyph} ${row.verification_label}`}</Badge>{" "}
-                    <span className="card-note">{row.evidence_note}</span>
+                    <Badge variant={meta.variant}>{`${meta.glyph} ${t(row.verification_label)}`}</Badge>{" "}
+                    <span className="card-note">{localizeEvidenceNote(row.evidence_note)}</span>
                   </td>
                 </tr>
               );
@@ -136,6 +139,7 @@ export function MatrixView({ workbench, state }: { workbench: Workbench; state: 
 }
 
 export function WaterfallView({ state }: { state: WorkbenchState }) {
+  const t = useT();
   const turns = state.projection?.waterfall_turns || [];
   return (
     <section
@@ -147,13 +151,13 @@ export function WaterfallView({ state }: { state: WorkbenchState }) {
     >
       <header className="view-head">
         <h2 className="view-title" id="waterfall-title">
-          Turn 瀑布
+          {t("Turn 瀑布")}
         </h2>
-        <Badge id="waterfall-count">{`${turns.length} turns`}</Badge>
+        <Badge id="waterfall-count">{t("{count} turns", { count: turns.length })}</Badge>
       </header>
       <div className="waterfall" id="waterfall-list">
         {!turns.length ? (
-          <Notice level="info">当前运行尚无已记录的执行回合。</Notice>
+          <Notice level="info">{t("当前运行尚无已记录的执行回合。")}</Notice>
         ) : (
           turns.map((turn) => {
             const meta = statusMeta(turn.status);
@@ -173,8 +177,8 @@ export function WaterfallView({ state }: { state: WorkbenchState }) {
                   <Badge variant={meta.variant}>{meta.label}</Badge>
                 </div>
                 <div className="wf-main">
-                  <span className="wf-title">{turn.title}</span>
-                  <span className="wf-summary">{turn.summary}</span>
+                  <span className="wf-title">{localizeComposite(turn.title)}</span>
+                  <span className="wf-summary">{localizeComposite(turn.summary)}</span>
                   {timed ? (
                     <span className="wf-track">
                       <span className="wf-bar" style={barStyle} />
@@ -191,7 +195,7 @@ export function WaterfallView({ state }: { state: WorkbenchState }) {
                         <summary>
                           <span className="tool-mark">▤</span>
                           <span className="tool-name">MANIFEST.md</span>
-                          <span className="tool-target">{turn.title}</span>
+                          <span className="tool-target">{localizeComposite(turn.title)}</span>
                           <span className="tool-duration" />
                         </summary>
                         <pre className="tool-body">{turn.manifest_md}</pre>
@@ -201,7 +205,7 @@ export function WaterfallView({ state }: { state: WorkbenchState }) {
                 </div>
                 <div className="wf-meta">
                   <span>{formatDurationMs(turn.duration_ms)}</span>
-                  <span>{turn.steps > 0 ? `${turn.steps} steps` : "事件节点"}</span>
+                  <span>{turn.steps > 0 ? t("{count} steps", { count: turn.steps }) : t("事件节点")}</span>
                 </div>
               </article>
             );

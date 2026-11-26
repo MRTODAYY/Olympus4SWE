@@ -1,6 +1,7 @@
 import { Component, lazy, Suspense, useMemo, useState, type ErrorInfo, type ReactNode } from "react";
 
 import { Notice } from "./ui";
+import { tr, useT } from "../i18n";
 import type { DagGraphProps } from "../graph/types";
 
 type GraphModule = typeof import("../graph/ariadne-graph");
@@ -227,12 +228,15 @@ export class GraphErrorBoundary extends Component<BoundaryProps, BoundaryState> 
                   onRetry();
                 }}
               >
-                重试加载
+                {tr("重试加载")}
               </button>
             )
           }
         >
-          {`${this.props.name}组件未能加载（ariadne-graph：${error.message || "未知错误"}），其余控制台功能不受影响。`}
+          {tr("{name}组件未能加载（ariadne-graph：{reason}），其余控制台功能不受影响。", {
+            name: this.props.name,
+            reason: error.message || tr("未知错误"),
+          })}
         </Notice>
       );
     }
@@ -241,6 +245,7 @@ export class GraphErrorBoundary extends Component<BoundaryProps, BoundaryState> 
 }
 
 export function DagGraphHost(props: DagGraphProps) {
+  const t = useT();
   // Freeze the choice per mount: if `cachedGraphModule` fills in after the lazy chunk resolves, a
   // later re-render would swap <LazyDag> for <Loaded>, remounting the graph and dropping focus and
   // the panned/zoomed viewport on the first interaction.
@@ -256,7 +261,7 @@ export function DagGraphHost(props: DagGraphProps) {
   return (
     <div className="graph-host" id="dag-graph" data-graph-host="dag">
       <GraphErrorBoundary
-        name="任务依赖图"
+        name={t("任务依赖图")}
         resetKey={`${props.runId}:${retryToken}`}
         onRetry={() => {
           if (!cachedGraphModule) graphModulePromise = null;

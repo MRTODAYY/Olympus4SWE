@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { ApprovalAction, CommandBody, GoalSpec, RunProjection } from "../api/types";
 import { productArtifactUrl } from "../api/client";
 import { useRunStream, type StreamPhase } from "../api/useRunStream";
+import { useT } from "../i18n";
 import {
   APPROVAL_LABELS,
   boardBadgeVariant,
@@ -40,6 +41,7 @@ export function QuickRulingDrawer({
   workbench: Workbench;
   state: WorkbenchState;
 }) {
+  const t = useT();
   const runId = state.activeSurface === "board" ? state.quickDrawerRunId : null;
   const [projection, setProjection] = useState<RunProjection | null>(null);
   const [phase, setPhase] = useState<StreamPhase | null>(null);
@@ -134,7 +136,7 @@ export function QuickRulingDrawer({
     : "warn";
   const badgeLabel = summary
     ? STATUS_BADGE_LABELS[summary.status_badge] || summary.status_badge
-    : "Ruling";
+    : t("Ruling");
 
   const sendDrawerCommand = async (body: CommandBody, successMessage: string): Promise<void> => {
     const targetRunId = runId;
@@ -192,7 +194,7 @@ export function QuickRulingDrawer({
     if (!current) return;
     const note = clarificationNote.trim();
     if (!Object.keys(answers).length && !note) {
-      const msg = "请先回答至少一项澄清问题或填写补充说明";
+      const msg = t("请先回答至少一项澄清问题或填写补充说明");
       setNotice({ tone: "warn", text: msg });
       workbench.toast(msg);
       return;
@@ -204,8 +206,8 @@ export function QuickRulingDrawer({
     await sendDrawerCommand(
       { action: "clarify", answers, clarification_note: note },
       remaining.length
-        ? "已保存澄清进度，仍可继续回答剩余阻断项"
-        : "已提交澄清并生成新的 GoalSpec 版本",
+        ? t("已保存澄清进度，仍可继续回答剩余阻断项")
+        : t("已提交澄清并生成新的 GoalSpec 版本"),
     );
   };
 
@@ -222,30 +224,30 @@ export function QuickRulingDrawer({
       );
       if (blockers.length || blockingCritique) {
         workbench.openDialog({
-          title: `GoalSpec v${spec.version} 仍有未决阻断项`,
-          description: "请先处理阻断项。若要批准此版本，请填写接受风险的理由。",
-          label: "接受风险理由（必填）",
-          defaultValue: "首期范围已与业务确认，接受未决歧义风险先行冻结规格。",
+          title: t("GoalSpec v{version} 仍有未决阻断项", { version: spec.version }),
+          description: t("请先处理阻断项。若要批准此版本，请填写接受风险的理由。"),
+          label: t("接受风险理由（必填）"),
+          defaultValue: t("首期范围已与业务确认，接受未决歧义风险先行冻结规格。"),
           requireNonEmpty: true,
           onConfirm: (reason) =>
             sendDrawerCommand(
               { ...command, action: "approve_spec", accept_risk: true, reason },
-              "已带风险批准 GoalSpec，进入架构设计",
+              t("已带风险批准 GoalSpec，进入架构设计"),
             ),
         });
         return;
       }
-      void sendDrawerCommand(command, "已批准 GoalSpec，进入架构设计");
+      void sendDrawerCommand(command, t("已批准 GoalSpec，进入架构设计"));
       return;
     }
     if (command.action === "approve_design") {
-      void sendDrawerCommand(command, "已批准 DesignSpec，启动任务分解");
+      void sendDrawerCommand(command, t("已批准 DesignSpec，启动任务分解"));
       return;
     }
     const message =
       current.workflow?.stop_after === "plan"
-        ? "已批准任务计划，蓝图编排已完成"
-        : "已批准任务计划，开始执行";
+        ? t("已批准任务计划，蓝图编排已完成")
+        : t("已批准任务计划，开始执行");
     void sendDrawerCommand(command, message);
   };
 
@@ -321,12 +323,13 @@ export function QuickRulingDrawer({
     if (!blockerTaskId || !current) return;
     const expectedRevision = current.state_revision;
     workbench.openDialog({
-      title: `向任务 ${blockerTaskId} 注入人工提示并重试`,
-      description:
+      title: t("向任务 {taskId} 注入人工提示并重试", { taskId: blockerTaskId }),
+      description: t(
         "提示原文保留在审计事件中，随下次隔离沙盒执行一并注入 Worker 上下文，不直接篡改需求契约。",
-      label: "注入提示内容",
+      ),
+      label: t("注入提示内容"),
       defaultValue: "",
-      placeholder: "输入要注入的人工提示，例如需修复的边界或重试思路。",
+      placeholder: t("输入要注入的人工提示，例如需修复的边界或重试思路。"),
       requireNonEmpty: true,
       onConfirm: (hint) =>
         sendDrawerCommand(
@@ -336,7 +339,7 @@ export function QuickRulingDrawer({
             hint,
             expected_state_revision: expectedRevision,
           },
-          `已向 ${blockerTaskId} 注入提示并重新排入就绪队列`,
+          t("已向 {taskId} 注入提示并重新排入就绪队列", { taskId: blockerTaskId }),
         ),
     });
   };
@@ -346,12 +349,13 @@ export function QuickRulingDrawer({
     if (!blockerTaskId || !current) return;
     const expectedRevision = current.state_revision;
     workbench.openDialog({
-      title: `将任务 ${blockerTaskId} 改派给人工工程师`,
-      description:
+      title: t("将任务 {taskId} 改派给人工工程师", { taskId: blockerTaskId }),
+      description: t(
         "改派后人工提交的产物仍须经过相同的程序门禁与 Argus 独立复核才能成为已验收状态。",
-      label: "改派备注",
+      ),
+      label: t("改派备注"),
       defaultValue: "",
-      placeholder: "输入改派备注，例如接手人与需关注的验收要点。",
+      placeholder: t("输入改派备注，例如接手人与需关注的验收要点。"),
       requireNonEmpty: true,
       onConfirm: (note) =>
         sendDrawerCommand(
@@ -361,7 +365,7 @@ export function QuickRulingDrawer({
             note,
             expected_state_revision: expectedRevision,
           },
-          `已记录 ${blockerTaskId} 改派人工并回到就绪态`,
+          t("已记录 {taskId} 改派人工并回到就绪态", { taskId: blockerTaskId }),
         ),
     });
   };
@@ -371,12 +375,13 @@ export function QuickRulingDrawer({
     if (!blockerTaskId || !current) return;
     const expectedRevision = current.state_revision;
     workbench.openDialog({
-      title: `接受风险完成任务 ${blockerTaskId}`,
-      description:
+      title: t("接受风险完成任务 {taskId}", { taskId: blockerTaskId }),
+      description: t(
         "必须填写明确理由。该决定与 Agent 建议分开存储，追踪矩阵标记为“未验证 · 人工接受”，绝不显示为“已验证”。",
-      label: "接受风险理由（必填）",
+      ),
+      label: t("接受风险理由（必填）"),
       defaultValue: "",
-      placeholder: "输入接受风险的明确理由，例如影响范围与缓解措施。",
+      placeholder: t("输入接受风险的明确理由，例如影响范围与缓解措施。"),
       requireNonEmpty: true,
       onConfirm: (reason) =>
         sendDrawerCommand(
@@ -386,7 +391,7 @@ export function QuickRulingDrawer({
             reason,
             expected_state_revision: expectedRevision,
           },
-          `已记录人工接受风险，${blockerTaskId} 标记为未验证 · 人工接受`,
+          t("已记录人工接受风险，{taskId} 标记为未验证 · 人工接受", { taskId: blockerTaskId }),
         ),
     });
   };
@@ -425,7 +430,7 @@ export function QuickRulingDrawer({
               type="button"
               className="btn btn-quiet"
               id="btn-drawer-close"
-              aria-label="Close Quick Ruling Drawer"
+              aria-label={t("Close Quick Ruling Drawer")}
               onClick={() => workbench.closeQuickDrawer()}
             >
               ×
@@ -441,7 +446,7 @@ export function QuickRulingDrawer({
               <span className="oracle-god-monogram" aria-hidden="true">
                 {god.monogram}
               </span>
-              <span>{`${god.name} → You`}</span>
+              <span>{`${god.name} ${t("→ You")}`}</span>
             </span>
             <button
               type="button"
@@ -449,7 +454,7 @@ export function QuickRulingDrawer({
               id="btn-drawer-open-cockpit"
               onClick={openCockpit}
             >
-              Open Full Ariadne Cockpit ↗
+              {t("Open Full Ariadne Cockpit ↗")}
             </button>
           </div>
         </header>
@@ -468,13 +473,15 @@ export function QuickRulingDrawer({
 
           {!projection ? (
             <p className="ruling-drawer-empty" id="quick-drawer-loading">
-              {phase === "missing" ? "找不到该 Oracle 的运行记录。" : "正在加载 Oracle 裁决上下文…"}
+              {phase === "missing"
+                ? t("找不到该 Oracle 的运行记录。")
+                : t("正在加载 Oracle 裁决上下文…")}
             </p>
           ) : (
             <>
               {projection.raw_input ? (
-                <section className="ruling-drawer-intent" aria-label="Oracle Intent">
-                  <p className="dialog-label">Intent</p>
+                <section className="ruling-drawer-intent" aria-label={t("Oracle Intent")}>
+                  <p className="dialog-label">{t("Intent")}</p>
                   <p className="ruling-drawer-intent-text">{projection.raw_input}</p>
                 </section>
               ) : null}
@@ -492,7 +499,7 @@ export function QuickRulingDrawer({
                 <section
                   className="approval-reviews"
                   id="quick-drawer-approvals"
-                  aria-label="审批候选版本"
+                  aria-label={t("审批候选版本")}
                 >
                   {APPROVAL_ACTIONS.map((action) => {
                     const binding = reviews.get(action);
@@ -512,7 +519,7 @@ export function QuickRulingDrawer({
                         onRequestRevision={(_action, feedback) =>
                           sendDrawerCommand(
                             { action: "request_revision", feedback },
-                            "已提交修订请求，工作流从需求对齐阶段重新启动",
+                            t("已提交修订请求，工作流从需求对齐阶段重新启动"),
                           )
                         }
                         disabled={busy}
@@ -527,10 +534,13 @@ export function QuickRulingDrawer({
                   <div className="hitl-copy">
                     <p className="hitl-headline">
                       <span aria-hidden="true">✕</span>
-                      <span>{blocker.headline || "任务受阻，需人工介入"}</span>
+                      <span>{blocker.headline || t("任务受阻，需人工介入")}</span>
                     </p>
                     <p className="hitl-detail">
-                      {`受影响任务：${(blocker.affected_task_ids || []).join("、")}。原因：${blocker.detail}`}
+                      {t("受影响任务：{tasks}。原因：{reason}", {
+                        tasks: (blocker.affected_task_ids || []).join(t("、")),
+                        reason: blocker.detail,
+                      })}
                     </p>
                   </div>
                   <div className="hitl-actions">
@@ -541,7 +551,7 @@ export function QuickRulingDrawer({
                       disabled={busy}
                       onClick={openBlockerHint}
                     >
-                      注入提示
+                      {t("注入提示")}
                     </button>
                     <button
                       type="button"
@@ -552,11 +562,11 @@ export function QuickRulingDrawer({
                         blockerTaskId &&
                         void sendDrawerCommand(
                           { action: "retry_task", task_id: blockerTaskId, hint: "" },
-                          `已将任务 ${blockerTaskId} 重置为就绪 (READY)`,
+                          t("已将任务 {taskId} 重置为就绪 (READY)", { taskId: blockerTaskId }),
                         )
                       }
                     >
-                      重试任务
+                      {t("重试任务")}
                     </button>
                     <button
                       type="button"
@@ -565,7 +575,7 @@ export function QuickRulingDrawer({
                       disabled={busy}
                       onClick={openBlockerReassign}
                     >
-                      改派给人
+                      {t("改派给人")}
                     </button>
                     <button
                       type="button"
@@ -574,7 +584,7 @@ export function QuickRulingDrawer({
                       disabled={busy}
                       onClick={openBlockerAcceptRisk}
                     >
-                      接受风险
+                      {t("接受风险")}
                     </button>
                   </div>
                 </section>
@@ -585,9 +595,9 @@ export function QuickRulingDrawer({
                   <div className="hitl-copy">
                     <p className="hitl-headline">
                       <span aria-hidden="true">◷</span>
-                      <span>编排当前处于暂停状态</span>
+                      <span>{t("编排当前处于暂停状态")}</span>
                     </p>
-                    <p className="hitl-detail">恢复调度后，Pantheon 将继续推进剩余任务。</p>
+                    <p className="hitl-detail">{t("恢复调度后，Pantheon 将继续推进剩余任务。")}</p>
                   </div>
                   <div className="hitl-actions">
                     <button
@@ -596,10 +606,10 @@ export function QuickRulingDrawer({
                       id="btn-drawer-resume"
                       disabled={busy}
                       onClick={() =>
-                        void sendDrawerCommand({ action: "resume" }, "已恢复任务编排调度")
+                        void sendDrawerCommand({ action: "resume" }, t("已恢复任务编排调度"))
                       }
                     >
-                      恢复编排
+                      {t("恢复编排")}
                     </button>
                   </div>
                 </section>
@@ -615,7 +625,7 @@ export function QuickRulingDrawer({
                   <div className="hitl-copy">
                     <p className="hitl-headline">
                       <span aria-hidden="true">◷</span>
-                      <span>{gateBanner?.headline || "正在将澄清与补充约束融合进 GoalSpec…"}</span>
+                      <span>{gateBanner?.headline || t("正在将澄清与补充约束融合进 GoalSpec…")}</span>
                     </p>
                     {gateBanner?.detail ? <p className="hitl-detail">{gateBanner.detail}</p> : null}
                   </div>
@@ -644,7 +654,7 @@ export function QuickRulingDrawer({
                   <div className="hitl-copy">
                     <p className="hitl-headline">
                       <span aria-hidden="true">{gateBanner?.tone === "danger" ? "✕" : "⚠"}</span>
-                      <span>{gateBanner?.headline || "交付验收待人工决策"}</span>
+                      <span>{gateBanner?.headline || t("交付验收待人工决策")}</span>
                     </p>
                     {gateBanner?.detail ? <p className="hitl-detail">{gateBanner.detail}</p> : null}
                     {shotUrl ? (
@@ -657,7 +667,7 @@ export function QuickRulingDrawer({
                         <img
                           key={shotUrl}
                           src={shotUrl}
-                          alt="实机首页截图"
+                          alt={t("实机首页截图")}
                           loading="lazy"
                         />
                       </a>
@@ -673,11 +683,11 @@ export function QuickRulingDrawer({
                         onClick={() =>
                           void sendDrawerCommand(
                             { action: "retry_workflow" },
-                            "已重新启动交付验证与修复工作流",
+                            t("已重新启动交付验证与修复工作流"),
                           )
                         }
                       >
-                        从断点重试
+                        {t("从断点重试")}
                       </button>
                     ) : null}
                     {bootLogUrl ? (
@@ -687,7 +697,7 @@ export function QuickRulingDrawer({
                         target="_blank"
                         rel="noopener"
                       >
-                        查看启动日志
+                        {t("查看启动日志")}
                       </a>
                     ) : null}
                     <button
@@ -695,7 +705,7 @@ export function QuickRulingDrawer({
                       className="btn"
                       onClick={() => workbench.openDeliveryEvidence(runId)}
                     >
-                      查看完整交付证据
+                      {t("查看完整交付证据")}
                     </button>
                   </div>
                 </section>
@@ -712,7 +722,7 @@ export function QuickRulingDrawer({
                   <div className="hitl-copy">
                     <p className="hitl-headline">
                       <span aria-hidden="true">✕</span>
-                      <span>{gateBanner?.headline || "工作流执行中断"}</span>
+                      <span>{gateBanner?.headline || t("工作流执行中断")}</span>
                     </p>
                     {gateBanner?.detail ? (
                       <p className="hitl-detail">{localizeError(gateBanner.detail)}</p>
@@ -728,15 +738,15 @@ export function QuickRulingDrawer({
                         onClick={() =>
                           void sendDrawerCommand(
                             { action: "retry_workflow" },
-                            "已从断点重新启动工作流",
+                            t("已从断点重新启动工作流"),
                           )
                         }
                       >
-                        从断点重试
+                        {t("从断点重试")}
                       </button>
                     ) : null}
                     <button type="button" className="btn" onClick={openCockpit}>
-                      查看节点日志
+                      {t("查看节点日志")}
                     </button>
                   </div>
                 </section>
@@ -747,7 +757,7 @@ export function QuickRulingDrawer({
                   <div className="hitl-copy">
                     <p className="hitl-headline">
                       <span aria-hidden="true">✓</span>
-                      <span>{gateBanner?.headline || "产品蓝图已定稿"}</span>
+                      <span>{gateBanner?.headline || t("产品蓝图已定稿")}</span>
                     </p>
                     {gateBanner?.detail ? (
                       <p className="hitl-detail">{gateBanner.detail}</p>
@@ -762,11 +772,11 @@ export function QuickRulingDrawer({
                       onClick={() =>
                         void sendDrawerCommand(
                           { action: "promote_to_execute", workflow_name: "full_sdlc_tdd" },
-                          "已升级为 full_sdlc_tdd，启动沙盒代码执行",
+                          t("已升级为 full_sdlc_tdd，启动沙盒代码执行"),
                         )
                       }
                     >
-                      转入沙盒执行 (full_sdlc_tdd)
+                      {t("转入沙盒执行 (full_sdlc_tdd)")}
                     </button>
                   </div>
                 </section>
@@ -774,7 +784,7 @@ export function QuickRulingDrawer({
 
               {!hasAnyRuling ? (
                 <div className="ruling-drawer-empty" id="quick-drawer-resolved">
-                  <p>该 Oracle 当前没有待裁决关口，可关闭抽屉或进入 Ariadne 控制台查看完整进度。</p>
+                  <p>{t("该 Oracle 当前没有待裁决关口，可关闭抽屉或进入 Ariadne 控制台查看完整进度。")}</p>
                 </div>
               ) : null}
             </>

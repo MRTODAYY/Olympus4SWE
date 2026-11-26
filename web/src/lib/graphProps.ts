@@ -1,9 +1,10 @@
 import type { RunProjection } from "../api/types";
 import type { DagGraphProps, DagPill, DagTone } from "../graph/types";
+import { tr } from "../i18n/translate";
 import {
   LIVE_TASK_STATUSES,
-  RETRY_MESSAGE,
-  RETRY_NEXT_STEP,
+  retryMessage,
+  retryNextStep,
   statusMeta,
   taskDisplayStatus,
 } from "./labels";
@@ -22,8 +23,8 @@ export function dagGraphProps(
     runId: projection.run_id,
     selectedId,
     onSelect,
-    ariaLabel: "任务依赖有向无环图",
-    emptyMessage: "当前运行尚未生成任务 DAG",
+    ariaLabel: tr("任务依赖有向无环图"),
+    emptyMessage: tr("当前运行尚未生成任务 DAG"),
     nodes: nodes.map((node) => {
       const status = displayStatus.get(node.task_id) || "waiting";
       const meta = statusMeta(status, node.accepted_risk_reason);
@@ -33,11 +34,11 @@ export function dagGraphProps(
       const recent = live?.recent_tools.at(-1);
       const tool = live?.current_tool?.tool || (recent && `${TOOL_MARKS[recent.status]} ${recent.tool}`);
       const activity = [live?.driver_name, tool].filter(Boolean).join(" · ");
-      const context = retrying ? RETRY_MESSAGE : activity || `${node.role || "engineer"} · ${node.kind || "implement"}`;
+      const context = retrying ? retryMessage() : activity || `${node.role || "engineer"} · ${node.kind || "implement"}`;
       const statusText = retrying
-        ? RETRY_NEXT_STEP
+        ? retryNextStep()
         : dependencyBlocked
-          ? "依赖受阻"
+          ? tr("依赖受阻")
           : `${meta.glyph} ${meta.label}`;
       const tone: DagTone = retrying
         ? "warn"
@@ -47,9 +48,9 @@ export function dagGraphProps(
             ? "planned"
             : meta.variant;
       const pill: DagPill | null = retrying
-        ? { text: "重试中", tone: "warn" }
+        ? { text: tr("重试中"), tone: "warn" }
         : node.accepted_risk_reason
-          ? { text: "⚠ 风险", tone: "warn" }
+          ? { text: tr("⚠ 风险"), tone: "warn" }
           : node.attempt > 1
             ? { text: `×${node.attempt}`, tone: "muted" }
             : null;
@@ -64,7 +65,10 @@ export function dagGraphProps(
         title: node.title || "",
         issue: retrying ? "retry" : dependencyBlocked ? "dependency" : "",
         risk: Boolean(node.accepted_risk_reason),
-        ariaLabel: `任务 ${node.task_id} ${retrying || activity ? `${context}，${statusText}` : statusText}`,
+        ariaLabel: tr("任务 {taskId} {detail}", {
+          taskId: node.task_id,
+          detail: retrying || activity ? `${context}${tr("，")}${statusText}` : statusText,
+        }),
       };
     }),
     edges: edges.map((edge) => ({

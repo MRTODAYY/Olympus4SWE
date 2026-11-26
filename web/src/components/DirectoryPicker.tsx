@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 
 import { browseFilesystem } from "../api/client";
 import type { FilesystemBrowseResponse } from "../api/types";
+import { tr, useT } from "../i18n";
 import { buildBreadcrumbs } from "../lib/paths";
 
 export interface DirectoryPickerProps {
@@ -29,6 +30,7 @@ export function DirectoryPicker({
   refreshKey = 0,
   onDefaultRoot,
 }: DirectoryPickerProps) {
+  const t = useT();
   const [data, setData] = useState<FilesystemBrowseResponse | null>(null);
   const [showHidden, setShowHidden] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -67,7 +69,7 @@ export function DirectoryPicker({
         })
         .catch((err: unknown) => {
           if (cancelled || seq !== requestSeqRef.current) return;
-          setFetchError((err as Error).message || "无法浏览目录");
+          setFetchError((err as Error).message || tr("无法浏览目录"));
         })
         .finally(() => {
           if (!cancelled && seq === requestSeqRef.current) {
@@ -130,7 +132,7 @@ export function DirectoryPicker({
   return (
     <div className="dir-picker" id={`${idPrefix}-picker`} data-picker-mode={mode}>
       {quickRoots.length ? (
-        <div className="picker-roots" role="group" aria-label="Quick roots">
+        <div className="picker-roots" role="group" aria-label={t("Quick roots")}>
           {quickRoots.map((root) => {
             const isCurrent = data?.current_path === root.path && !data.prefix;
             return (
@@ -172,12 +174,12 @@ export function DirectoryPicker({
           className="btn btn-quiet picker-up-btn"
           id={`${idPrefix}-up`}
           disabled={disabled || !data?.parent_path}
-          title="Up to parent folder"
+          title={t("Up to parent folder")}
           onClick={() => {
             if (data?.parent_path) selectPath(data.parent_path);
           }}
         >
-          ↑ Up
+          {t("↑ Up")}
         </button>
         <label className="picker-hidden-toggle">
           <input
@@ -190,12 +192,12 @@ export function DirectoryPicker({
               setShowHidden(event.target.checked);
             }}
           />
-          <span>Show hidden</span>
+          <span>{t("Show hidden")}</span>
         </label>
       </div>
 
       {breadcrumbs.length ? (
-        <nav className="picker-breadcrumbs" aria-label="Directory breadcrumbs">
+        <nav className="picker-breadcrumbs" aria-label={t("Directory breadcrumbs")}>
           {breadcrumbs.map((segment, index) => {
             const isLast = index === breadcrumbs.length - 1;
             return (
@@ -220,10 +222,10 @@ export function DirectoryPicker({
           })}
           {data?.prefix ? (
             <span className="picker-filter-pill mono" data-picker-prefix={data.prefix}>
-              {`filter: ${data.prefix}`}
+              {t("filter: {prefix}", { prefix: data.prefix })}
             </span>
           ) : null}
-          {loading ? <span className="picker-loading">Loading…</span> : null}
+          {loading ? <span className="picker-loading">{t("Loading…")}</span> : null}
         </nav>
       ) : null}
 
@@ -232,11 +234,11 @@ export function DirectoryPicker({
         className="picker-list scroller"
         id={`${idPrefix}-list`}
         role="listbox"
-        aria-label="Subdirectories"
+        aria-label={t("Subdirectories")}
       >
         {data?.path_missing ? (
           <li className="picker-empty" data-picker-state="missing">
-            Directory does not exist yet — select an ancestor or create it under New Project.
+            {t("Directory does not exist yet — select an ancestor or create it under New Project.")}
           </li>
         ) : fetchError ? (
           <li className="picker-empty" data-picker-state="error">
@@ -269,7 +271,7 @@ export function DirectoryPicker({
                   ) : null}
                   {entry.already_registered ? (
                     <span className="badge" data-variant="ok" data-badge-kind="registered">
-                      Registered
+                      {t("Registered")}
                     </span>
                   ) : null}
                 </span>
@@ -279,10 +281,10 @@ export function DirectoryPicker({
         ) : (
           <li className="picker-empty" data-picker-state="empty">
             {loading
-              ? "Loading folders…"
+              ? t("Loading folders…")
               : data?.prefix
-                ? `No folders matching "${data.prefix}"`
-                : "No subdirectories in this folder"}
+                ? t('No folders matching "{prefix}"', { prefix: data.prefix })
+                : t("No subdirectories in this folder")}
           </li>
         )}
       </ul>

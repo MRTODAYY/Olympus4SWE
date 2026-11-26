@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import type { BallHolder, RunSummary } from "../api/types";
+import { useT } from "../i18n";
 import { GOD_META } from "../lib/labels";
 import type { BoardModeFilter, Workbench, WorkbenchState } from "../state/workbench";
 import { OracleCard } from "./OracleCard";
@@ -51,11 +52,12 @@ export function OracleBoard({
   onQuickRule,
   footerSlot,
 }: OracleBoardProps) {
+  const t = useT();
   const openTabSet = new Set(state.openTabs);
   const selectedWorkspace = state.selectedWorkspaceId
     ? state.workspaces.find((ws) => ws.workspace_id === state.selectedWorkspaceId)
     : null;
-  const scopeName = selectedWorkspace ? selectedWorkspace.name : "All Projects";
+  const scopeName = selectedWorkspace ? selectedWorkspace.name : t("All Projects");
 
   const modeFiltered = state.runs.filter(
     (run) => state.boardModeFilter === "all" || run.workspace_mode === state.boardModeFilter,
@@ -68,6 +70,10 @@ export function OracleBoard({
   const activeGodMeta = state.selectedGodFilter ? GOD_META[state.selectedGodFilter] : null;
   const effectiveGodFilter = state.hoveredGod ?? state.selectedGodFilter;
 
+  const scopePill = state.showArchived
+    ? t("{scope} · {count} 个已归档", { scope: scopeName, count: archivedRuns.length })
+    : t("{scope} · {count} 个进行中", { scope: scopeName, count: activeCount });
+
   const grouped: Record<BallHolder, RunSummary[]> = {
     human: activeRuns.filter((run) => run.ball_holder === "human"),
     agent: activeRuns.filter((run) => run.ball_holder === "agent"),
@@ -75,14 +81,12 @@ export function OracleBoard({
   };
 
   return (
-    <main id="oracle-board" className="board-shell" aria-label="Oracle Board">
+    <main id="oracle-board" className="board-shell" aria-label={t("Oracle Board")}>
       <header className="board-head">
         <div className="board-head-left">
-          <h1 className="board-title">Oracle Board</h1>
+          <h1 className="board-title">{t("Oracle Board")}</h1>
           <span className="board-scope-pill" id="board-scope-pill">
-            {state.showArchived
-              ? `${scopeName} · ${archivedRuns.length} archived`
-              : `${scopeName} · ${activeCount} active`}
+            {scopePill}
           </span>
           <span
             className="badge"
@@ -99,7 +103,7 @@ export function OracleBoard({
           <div
             className="mode-filter-group"
             role="group"
-            aria-label="Filter by workspace mode"
+            aria-label={t("Filter by workspace mode")}
           >
             {MODE_FILTERS.map((item) => (
               <button
@@ -110,7 +114,7 @@ export function OracleBoard({
                 aria-pressed={state.boardModeFilter === item.id ? "true" : "false"}
                 onClick={() => workbench.setBoardModeFilter(item.id)}
               >
-                {item.label}
+                {t(item.label)}
               </button>
             ))}
           </div>
@@ -120,7 +124,7 @@ export function OracleBoard({
             id="btn-issue-oracle"
             onClick={() => void workbench.openNewRun()}
           >
-            + Issue Oracle
+            {t("+ Issue Oracle")}
           </button>
         </div>
       </header>
@@ -128,14 +132,14 @@ export function OracleBoard({
       {activeGodMeta && !footerSlot ? (
         <div className="board-filter-bar" role="status">
           <span>
-            Highlighting Pantheon seat: <strong>{activeGodMeta.name}</strong> ({activeGodMeta.role})
+            {t("Highlighting Pantheon seat:")} <strong>{activeGodMeta.name}</strong> ({activeGodMeta.role})
           </span>
           <button
             type="button"
             className="btn btn-quiet"
             onClick={() => workbench.setGodFilter(null)}
           >
-            Clear filter
+            {t("Clear filter")}
           </button>
         </div>
       ) : null}
@@ -144,7 +148,7 @@ export function OracleBoard({
         <div className="board-canvas scroller" id="oracle-board-archive">
           <div className="board-archive-banner">
             <div className="board-archive-copy">
-              <h2 className="board-col-title">Archived &amp; Completed History</h2>
+              <h2 className="board-col-title">{t("Archived & Completed History")}</h2>
               <span className="board-col-count" data-tone="muted">
                 {archivedRuns.length}
               </span>
@@ -154,7 +158,7 @@ export function OracleBoard({
               className="btn"
               onClick={() => workbench.openBoard({ archived: false })}
             >
-              Return to Active Board
+              {t("Return to Active Board")}
             </button>
           </div>
           {archivedRuns.length ? (
@@ -177,7 +181,7 @@ export function OracleBoard({
               })}
             </div>
           ) : (
-            <p className="board-empty">No archived or completed Oracles in this scope.</p>
+            <p className="board-empty">{t("No archived or completed Oracles in this scope.")}</p>
           )}
         </div>
       ) : (
@@ -185,15 +189,16 @@ export function OracleBoard({
           <div className="board-columns">
             {COLUMNS.map((col) => {
               const items = grouped[col.id];
+              const title = t(col.title);
               return (
                 <section
                   key={col.id}
                   className="board-column"
                   data-column={col.id}
-                  aria-label={col.title}
+                  aria-label={title}
                 >
                   <div className="board-col-head">
-                    <h2 className="board-col-title">{col.title}</h2>
+                    <h2 className="board-col-title">{title}</h2>
                     <span className="board-col-count" data-tone={col.tone}>
                       {items.length}
                     </span>
@@ -220,7 +225,7 @@ export function OracleBoard({
                         );
                       })
                     ) : (
-                      <p className="board-col-empty">{col.empty}</p>
+                      <p className="board-col-empty">{t(col.empty)}</p>
                     )}
                   </div>
                 </section>

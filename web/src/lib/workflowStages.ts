@@ -1,4 +1,6 @@
 import type { RunProjection } from "../api/types";
+import { localized } from "../i18n/localized";
+import { tr } from "../i18n/translate";
 import { NODE_LABELS, statusMeta, WORKFLOW_STATUS_TEXT } from "./labels";
 
 type WorkflowGraph = NonNullable<RunProjection["workflow"]["graph"]>;
@@ -76,11 +78,12 @@ const NODE_PHASE_BY_ID = new Map<string, string>([
   ["execute", "execute"],
 ]);
 
-const KIND_LABELS: Record<WorkflowNodeKind, string> = {
+/** Node-kind captions; proxied so every read is translated at access time. */
+const KIND_LABELS: Record<WorkflowNodeKind, string> = localized<Record<WorkflowNodeKind, string>>({
   gate: "关口",
   validator: "校验",
   stage: "",
-};
+});
 
 const STEP_GLYPHS = new Map<string, string>([
   ["completed", "✓"],
@@ -190,7 +193,7 @@ function buildRouteBadge(
   }
 
   if (bestTraversedBack) {
-    return { text: `回退${nodeLabelFor(bestTraversedBack.target)}`, tone: "warn" };
+    return { text: tr("回退{node}", { node: nodeLabelFor(bestTraversedBack.target) }), tone: "warn" };
   }
 
   if (bestTraversedForward) {
@@ -198,13 +201,13 @@ function buildRouteBadge(
     const targetKind = kindMap.get(target);
     const samePhase = nodePhaseMap.get(target) === nodePhase;
     if (samePhase && targetKind === "gate") {
-      return { text: "直达关口", tone: "muted" };
+      return { text: tr("直达关口"), tone: "muted" };
     }
-    return { text: `直达${nodeLabelFor(target)}`, tone: "muted" };
+    return { text: tr("直达{node}", { node: nodeLabelFor(target) }), tone: "muted" };
   }
 
   if ((status === "failed" || status === "error") && bestDeclaredBack) {
-    return { text: `回退 ${nodeLabelFor(bestDeclaredBack.target)}`, tone: "bad" };
+    return { text: tr("回退 {node}", { node: nodeLabelFor(bestDeclaredBack.target) }), tone: "bad" };
   }
 
   return null;
@@ -220,24 +223,24 @@ function summarizePhase(steps: WorkflowStageStep[]): {
   const skipped = steps.filter((step) => step.status === "skipped").length;
 
   if (steps.some((step) => step.status === "failed" || step.status === "error")) {
-    return { state: "failed", statusText: "✕ 中断", statusTone: "bad" };
+    return { state: "failed", statusText: tr("✕ 中断"), statusTone: "bad" };
   }
   if (steps.some((step) => step.status === "paused")) {
-    return { state: "waiting", statusText: "◷ 待确认", statusTone: "warn" };
+    return { state: "waiting", statusText: tr("◷ 待确认"), statusTone: "warn" };
   }
   if (steps.some((step) => step.status === "running")) {
-    return { state: "active", statusText: "▶ 运行中", statusTone: "live" };
+    return { state: "active", statusText: tr("▶ 运行中"), statusTone: "live" };
   }
   if (completed + skipped === total && total > 0) {
     if (completed === 0) {
-      return { state: "done", statusText: "— 已跳过", statusTone: "muted" };
+      return { state: "done", statusText: tr("— 已跳过"), statusTone: "muted" };
     }
     return { state: "done", statusText: `✓ ${completed}/${total}`, statusTone: "ok" };
   }
   if (completed > 0) {
     return { state: "active", statusText: `▶ ${completed}/${total}`, statusTone: "live" };
   }
-  return { state: "pending", statusText: "◷ 待开始", statusTone: "muted" };
+  return { state: "pending", statusText: tr("◷ 待开始"), statusTone: "muted" };
 }
 
 function connectorBetween(
@@ -342,7 +345,7 @@ export function buildWorkflowStages(projection: RunProjection): WorkflowStagesMo
     columns.push({
       id: def.id,
       indexLabel: def.indexLabel,
-      title: def.title,
+      title: tr(def.title),
       god: def.god,
       ...summary,
       steps,

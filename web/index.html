@@ -1,19 +1,33 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-theme="light">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Ariadne · Olympus4SWE 研发编排工作台</title>
+  <title>Ariadne · Olympus4SWE</title>
   <link rel="icon" type="image/svg+xml" href="/src/assets/favicon.svg">
   <script>
     (() => {
       try {
-        const saved = localStorage.getItem("olympus-theme");
-        if (saved === "dark" || saved === "light") {
-          document.documentElement.dataset.theme = saved;
+        const savedTheme = localStorage.getItem("olympus-theme");
+        if (savedTheme === "dark" || savedTheme === "light") {
+          document.documentElement.dataset.theme = savedTheme;
         }
       } catch (error) {
-        return;
+        /* storage blocked — fall back to the default theme */
+      }
+      try {
+        const fromUrl = new URLSearchParams(location.search).get("lang");
+        const savedLocale = localStorage.getItem("olympus-locale");
+        const locale =
+          fromUrl === "zh" || fromUrl === "en"
+            ? fromUrl
+            : savedLocale === "zh" || savedLocale === "en"
+              ? savedLocale
+              : "en";
+        document.documentElement.lang = locale === "zh" ? "zh-CN" : "en";
+        document.documentElement.dataset.locale = locale;
+      } catch (error) {
+        document.documentElement.dataset.locale = "en";
       }
     })();
   </script>

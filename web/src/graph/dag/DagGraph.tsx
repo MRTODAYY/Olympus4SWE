@@ -7,6 +7,7 @@ import { OrthogonalEdge, edgeTone, type OrthogonalEdgeType } from "../edges/Orth
 import type { IslandController } from "../island";
 import { edgeLineage, nodeLineage } from "../lineage";
 import type { DagGraphProps } from "../types";
+import { useT } from "../../i18n";
 import {
   NODE_H,
   NODE_W,
@@ -31,6 +32,7 @@ const handlesFor = (height: number): NodeHandle[] => [
 ];
 
 export function DagGraph(props: DagGraphProps & { controller: IslandController }) {
+  const t = useT();
   const { runId, selectedId, onSelect, controller } = props;
   const markerPrefix = useMarkerPrefix();
 
@@ -111,7 +113,7 @@ export function DagGraph(props: DagGraphProps & { controller: IslandController }
     return (
       <div className="ag-island" data-graph="dag" data-empty="true">
         <p className="ag-notice" role="status">
-          {props.emptyMessage || "当前运行尚未生成任务 DAG"}
+          {props.emptyMessage || t("当前运行尚未生成任务 DAG")}
         </p>
       </div>
     );
@@ -122,7 +124,7 @@ export function DagGraph(props: DagGraphProps & { controller: IslandController }
       graph="dag"
       layout={current}
       height={frameHeight(contentHeight, MIN_HEIGHT, MAX_HEIGHT)}
-      ariaLabel={props.ariaLabel || "任务依赖有向无环图"}
+      ariaLabel={props.ariaLabel || t("任务依赖有向无环图")}
       nodes={nodes}
       edges={edges}
       nodeTypes={NODE_TYPES}

@@ -24,15 +24,29 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
 import { App } from "./App";
+import { I18nProvider, useI18n } from "./i18n";
 import { Workbench } from "./state/workbench";
 
 const container = document.getElementById("root");
 if (!container) throw new Error("Ariadne: #root is missing from index.html");
 
 const workbench = new Workbench();
+
+/**
+ * The workbench keeps all UI state on the `Workbench` instance, so remounting the
+ * view tree on a locale change is safe — and it is what lets non-component label
+ * modules (`lib/labels.ts`, graph helpers) pick up the new language.
+ */
+function LocalizedApp() {
+  const { locale } = useI18n();
+  return <App key={locale} workbench={workbench} />;
+}
+
 createRoot(container).render(
   <StrictMode>
-    <App workbench={workbench} />
+    <I18nProvider>
+      <LocalizedApp />
+    </I18nProvider>
   </StrictMode>,
 );
 void workbench.start();

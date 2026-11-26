@@ -19,6 +19,7 @@ import {
 import { ArrowMarkers } from "../edges/OrthogonalEdge";
 import type { Point } from "../geometry";
 import type { IslandController } from "../island";
+import { useT } from "../../i18n";
 
 /** Viewport padding (px) shared by every graph frame. */
 export const PAD = 24;
@@ -139,6 +140,7 @@ function ViewportControls({
   userMoved: RefObject<boolean>;
   focusRef: RefObject<Point | null>;
 }) {
+  const t = useT();
   const flow = useReactFlow();
 
   const zoomAt = useCallback(
@@ -214,13 +216,13 @@ function ViewportControls({
   }, [flow, rootRef, zoomAt]);
 
   return (
-    <div className="ag-toolbar nopan nodrag" role="toolbar" aria-label="画布视图控制">
+    <div className="ag-toolbar nopan nodrag" role="toolbar" aria-label={t("画布视图控制")}>
       <button
         type="button"
         className="ag-tool-btn"
         data-graph-control="zoom-out"
-        aria-label="缩小"
-        title="缩小"
+        aria-label={t("缩小")}
+        title={t("缩小")}
         onClick={() => stepZoom(1 / ZOOM_STEP)}
       >
         −
@@ -229,8 +231,8 @@ function ViewportControls({
         type="button"
         className="ag-tool-btn"
         data-graph-control="zoom-in"
-        aria-label="放大"
-        title="放大"
+        aria-label={t("放大")}
+        title={t("放大")}
         onClick={() => stepZoom(ZOOM_STEP)}
       >
         +
@@ -239,18 +241,18 @@ function ViewportControls({
         type="button"
         className="ag-tool-btn ag-tool-text"
         data-graph-control="fit"
-        aria-label="适应画布"
-        title="适应画布"
+        aria-label={t("适应画布")}
+        title={t("适应画布")}
         onClick={fitAll}
       >
-        适应画布
+        {t("适应画布")}
       </button>
       <button
         type="button"
         className="ag-tool-btn ag-tool-text"
         data-graph-control="reset"
-        aria-label="重置 100%"
-        title="重置 100%"
+        aria-label={t("重置 100%")}
+        title={t("重置 100%")}
         onClick={resetOneToOne}
       >
         100%

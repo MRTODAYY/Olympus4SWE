@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 
+import { localized, useT } from "../i18n";
 import { deriveCloneFolderName, joinDirPath } from "../lib/paths";
 import type { Workbench, WorkbenchState } from "../state/workbench";
 import { NativeDialog } from "./Dialogs";
@@ -7,11 +8,11 @@ import { DirectoryPicker } from "./DirectoryPicker";
 
 type AddWorkspaceMode = "open" | "new" | "clone";
 
-const MODE_TABS: { id: AddWorkspaceMode; label: string; hint: string }[] = [
+const MODE_TABS: { id: AddWorkspaceMode; label: string; hint: string }[] = localized([
   { id: "open", label: "Open Folder", hint: "Register existing directory" },
   { id: "new", label: "New Project", hint: "Create empty folder" },
   { id: "clone", label: "Clone Git URL", hint: "Clone remote repo" },
-];
+]);
 
 export function WorkspaceDialog({
   workbench,
@@ -20,6 +21,7 @@ export function WorkspaceDialog({
   workbench: Workbench;
   state: WorkbenchState;
 }) {
+  const t = useT();
   const [mode, setMode] = useState<AddWorkspaceMode>("open");
   const [rootPath, setRootPath] = useState("");
   const [name, setName] = useState("");
@@ -58,7 +60,7 @@ export function WorkspaceDialog({
     event.preventDefault();
     const trimmedPath = rootPath.trim();
     if (!trimmedPath) {
-      setError("请填写或选择本地仓库目录路径");
+      setError(t("请填写或选择本地仓库目录路径"));
       return;
     }
     setBusy(true);
@@ -86,15 +88,15 @@ export function WorkspaceDialog({
     const parent = newParentDir.trim();
     const folder = newFolderName.trim();
     if (!parent) {
-      setError("请选择新建项目的父目录");
+      setError(t("请选择新建项目的父目录"));
       return;
     }
     if (!folder) {
-      setError("请填写新项目文件夹名称");
+      setError(t("请填写新项目文件夹名称"));
       return;
     }
     if (folder === "." || folder === ".." || folder.includes("/") || folder.includes("\\")) {
-      setError("项目文件夹名称不能包含路径分隔符或相对路径片段");
+      setError(t("项目文件夹名称不能包含路径分隔符或相对路径片段"));
       return;
     }
     const targetPath = joinDirPath(parent, folder);
@@ -124,11 +126,11 @@ export function WorkspaceDialog({
     const trimmedUrl = cloneUrl.trim();
     const trimmedParent = cloneParentDir.trim();
     if (!trimmedUrl) {
-      setError("请填写 Git 仓库地址或 owner/repo 简写");
+      setError(t("请填写 Git 仓库地址或 owner/repo 简写"));
       return;
     }
     if (!trimmedParent) {
-      setError("请选择克隆目标父目录");
+      setError(t("请选择克隆目标父目录"));
       return;
     }
     setBusy(true);
@@ -167,23 +169,27 @@ export function WorkspaceDialog({
       <div className="workspace-dialog-body">
         <div className="workspace-dialog-head">
           <h2 className="dialog-title" id="workspace-dialog-title">
-            Workspaces
+            {t("Workspaces")}
           </h2>
           <button
             type="button"
             className="btn btn-quiet"
-            aria-label="关闭工作区管理"
+            aria-label={t("关闭工作区管理")}
             onClick={closeDialog}
           >
             ×
           </button>
         </div>
         <p className="dialog-desc">
-          注册本地仓库作为项目工作区以筛选 Oracle Board。移除注册仅清理索引条目，绝不会删除磁盘文件或历史编排记录。
+          {t(
+            "注册本地仓库作为项目工作区以筛选 Oracle Board。移除注册仅清理索引条目，绝不会删除磁盘文件或历史编排记录。",
+          )}
         </p>
 
-        <section className="workspace-section" aria-label="已注册工作区">
-          <p className="dialog-label">Registered Workspaces ({state.workspaces.length})</p>
+        <section className="workspace-section" aria-label={t("已注册工作区")}>
+          <p className="dialog-label">
+            {t("Registered Workspaces ({count})", { count: state.workspaces.length })}
+          </p>
           <ul className="workspace-list scroller" id="workspace-list">
             {state.workspaces.length ? (
               state.workspaces.map((ws) => {
@@ -208,12 +214,12 @@ export function WorkspaceDialog({
                         </span>
                         {ws.pending_ruling_count > 0 ? (
                           <span className="badge" data-variant="warn">
-                            {ws.pending_ruling_count} ruling
+                            {t("{count} ruling", { count: ws.pending_ruling_count })}
                           </span>
                         ) : null}
                         {total > 0 ? (
                           <span className="badge" data-variant="live">
-                            {total} active
+                            {t("{count} active", { count: total })}
                           </span>
                         ) : null}
                       </div>
@@ -230,7 +236,7 @@ export function WorkspaceDialog({
                           closeDialog();
                         }}
                       >
-                        {isSelected ? "Current" : "Switch"}
+                        {isSelected ? t("Current") : t("Switch")}
                       </button>
                       <button
                         type="button"
@@ -239,21 +245,25 @@ export function WorkspaceDialog({
                         disabled={busy}
                         onClick={() => void handleUnregister(ws.workspace_id)}
                       >
-                        Unregister
+                        {t("Unregister")}
                       </button>
                     </div>
                   </li>
                 );
               })
             ) : (
-              <li className="workspace-empty">尚未注册工作区</li>
+              <li className="workspace-empty">{t("尚未注册工作区")}</li>
             )}
           </ul>
         </section>
 
-        <section className="workspace-add-section" aria-label="Add Workspace">
-          <p className="dialog-label">Add Workspace</p>
-          <div className="seg-group workspace-mode-tabs" role="group" aria-label="Add Workspace Mode">
+        <section className="workspace-add-section" aria-label={t("Add Workspace")}>
+          <p className="dialog-label">{t("Add Workspace")}</p>
+          <div
+            className="seg-group workspace-mode-tabs"
+            role="group"
+            aria-label={t("Add Workspace Mode")}
+          >
             {MODE_TABS.map((tab) => (
               <button
                 key={tab.id}
@@ -278,7 +288,7 @@ export function WorkspaceDialog({
             >
               <div className="form-field">
                 <label className="dialog-label" htmlFor="workspace-root-input">
-                  Directory Path
+                  {t("Directory Path")}
                 </label>
                 <DirectoryPicker
                   idPrefix="workspace-open"
@@ -296,13 +306,13 @@ export function WorkspaceDialog({
               </div>
               <div className="form-field">
                 <label className="dialog-label" htmlFor="workspace-name-input">
-                  Display Name (optional)
+                  {t("Display Name (optional)")}
                 </label>
                 <input
                   id="workspace-name-input"
                   className="field"
                   type="text"
-                  placeholder="Defaults to folder name"
+                  placeholder={t("Defaults to folder name")}
                   value={name}
                   disabled={busy}
                   onChange={(event) => setName(event.target.value)}
@@ -315,7 +325,7 @@ export function WorkspaceDialog({
               ) : null}
               <div className="dialog-actions">
                 <button type="button" className="btn btn-quiet" onClick={closeDialog}>
-                  Done
+                  {t("Done")}
                 </button>
                 <button
                   type="submit"
@@ -323,7 +333,7 @@ export function WorkspaceDialog({
                   id="btn-register-workspace"
                   disabled={busy}
                 >
-                  {busy ? "Registering…" : "Register Workspace"}
+                  {busy ? t("Registering…") : t("Register Workspace")}
                 </button>
               </div>
             </form>
@@ -337,7 +347,7 @@ export function WorkspaceDialog({
             >
               <div className="form-field">
                 <label className="dialog-label" htmlFor="workspace-new-parent-input">
-                  Parent Directory
+                  {t("Parent Directory")}
                 </label>
                 <DirectoryPicker
                   idPrefix="workspace-new-parent"
@@ -360,13 +370,13 @@ export function WorkspaceDialog({
               <div className="form-grid">
                 <div className="form-field">
                   <label className="dialog-label" htmlFor="workspace-new-folder">
-                    Short Project Name
+                    {t("Short Project Name")}
                   </label>
                   <input
                     id="workspace-new-folder"
                     className="field mono"
                     type="text"
-                    placeholder="e.g. voice-cli"
+                    placeholder={t("e.g. voice-cli")}
                     value={newFolderName}
                     disabled={busy}
                     onChange={(event) => {
@@ -377,13 +387,13 @@ export function WorkspaceDialog({
                 </div>
                 <div className="form-field">
                   <label className="dialog-label" htmlFor="workspace-new-display-name">
-                    Display Name (optional)
+                    {t("Display Name (optional)")}
                   </label>
                   <input
                     id="workspace-new-display-name"
                     className="field"
                     type="text"
-                    placeholder="Defaults to folder name"
+                    placeholder={t("Defaults to folder name")}
                     value={newDisplayName}
                     disabled={busy}
                     onChange={(event) => setNewDisplayName(event.target.value)}
@@ -399,16 +409,16 @@ export function WorkspaceDialog({
                     disabled={busy}
                     onChange={(event) => setNewInitGit(event.target.checked)}
                   />
-                  <span>Initialize Git repo (git init)</span>
+                  <span>{t("Initialize Git repo (git init)")}</span>
                 </label>
               </div>
               <p className="workspace-path-preview mono" id="workspace-new-preview">
                 {composedNewPath ? (
                   <>
-                    Creates <strong>{composedNewPath}</strong>
+                    {t("Creates")} <strong>{composedNewPath}</strong>
                   </>
                 ) : (
-                  "Select a parent directory and enter a short project name"
+                  t("Select a parent directory and enter a short project name")
                 )}
               </p>
               {error ? (
@@ -418,7 +428,7 @@ export function WorkspaceDialog({
               ) : null}
               <div className="dialog-actions">
                 <button type="button" className="btn btn-quiet" onClick={closeDialog}>
-                  Done
+                  {t("Done")}
                 </button>
                 <button
                   type="submit"
@@ -426,7 +436,7 @@ export function WorkspaceDialog({
                   id="btn-create-workspace"
                   disabled={busy}
                 >
-                  {busy ? "Creating…" : "Create Project"}
+                  {busy ? t("Creating…") : t("Create Project")}
                 </button>
               </div>
             </form>
@@ -441,13 +451,13 @@ export function WorkspaceDialog({
               <div className="form-grid">
                 <div className="form-field">
                   <label className="dialog-label" htmlFor="workspace-clone-url">
-                    Git Remote URL or owner/repo
+                    {t("Git Remote URL or owner/repo")}
                   </label>
                   <input
                     id="workspace-clone-url"
                     className="field mono"
                     type="text"
-                    placeholder="https://github.com/owner/repo.git or owner/repo"
+                    placeholder={t("https://github.com/owner/repo.git or owner/repo")}
                     value={cloneUrl}
                     disabled={busy}
                     onChange={(event) => {
@@ -462,13 +472,13 @@ export function WorkspaceDialog({
                 </div>
                 <div className="form-field">
                   <label className="dialog-label" htmlFor="workspace-clone-folder">
-                    Target Folder Name
+                    {t("Target Folder Name")}
                   </label>
                   <input
                     id="workspace-clone-folder"
                     className="field mono"
                     type="text"
-                    placeholder="Auto-derived from URL"
+                    placeholder={t("Auto-derived from URL")}
                     value={cloneFolder}
                     disabled={busy}
                     onChange={(event) => {
@@ -482,7 +492,7 @@ export function WorkspaceDialog({
               </div>
               <div className="form-field">
                 <label className="dialog-label" htmlFor="workspace-clone-parent-input">
-                  Clone Into Parent Directory
+                  {t("Clone Into Parent Directory")}
                 </label>
                 <DirectoryPicker
                   idPrefix="workspace-clone-parent"
@@ -505,10 +515,10 @@ export function WorkspaceDialog({
               <p className="workspace-path-preview mono" id="workspace-clone-preview">
                 {composedClonePath ? (
                   <>
-                    Clones into <strong>{composedClonePath}</strong>
+                    {t("Clones into")} <strong>{composedClonePath}</strong>
                   </>
                 ) : (
-                  "Enter a remote Git URL or owner/repo and select a parent directory"
+                  t("Enter a remote Git URL or owner/repo and select a parent directory")
                 )}
               </p>
               {error ? (
@@ -518,7 +528,7 @@ export function WorkspaceDialog({
               ) : null}
               <div className="dialog-actions">
                 <button type="button" className="btn btn-quiet" onClick={closeDialog}>
-                  Done
+                  {t("Done")}
                 </button>
                 <button
                   type="submit"
@@ -526,7 +536,7 @@ export function WorkspaceDialog({
                   id="btn-clone-workspace"
                   disabled={busy}
                 >
-                  {busy ? "Cloning…" : "Clone & Register"}
+                  {busy ? t("Cloning…") : t("Clone & Register")}
                 </button>
               </div>
             </form>

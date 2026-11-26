@@ -24,6 +24,8 @@ import type {
   WorkspaceResponse,
 } from "./types";
 
+import { tr } from "../i18n/translate";
+
 export class ApiError extends Error {
   readonly status: number;
 
@@ -70,7 +72,7 @@ export async function fetchProductArtifactText(
 ): Promise<string> {
   const response = await fetch(productArtifactUrl(runId, kind, version), { cache: "no-store" });
   if (!response.ok) {
-    throw new ApiError("读取实机验证产物失败", response.status);
+    throw new ApiError(tr("读取实机验证产物失败"), response.status);
   }
   return response.text();
 }
@@ -114,7 +116,7 @@ export async function createWorkspace(body: CreateWorkspaceBody): Promise<Worksp
   });
   const data = await json<WorkspaceResponse | ErrorResponse>(response);
   if (!response.ok || !data.ok) {
-    throw new ApiError((!data.ok && data.error) || "注册工作区失败", response.status);
+    throw new ApiError((!data.ok && data.error) || tr("注册工作区失败"), response.status);
   }
   return data;
 }
@@ -127,7 +129,7 @@ export async function cloneWorkspace(body: CloneWorkspaceBody): Promise<Workspac
   });
   const data = await json<WorkspaceResponse | ErrorResponse>(response);
   if (!response.ok || !data.ok) {
-    throw new ApiError((!data.ok && data.error) || "克隆工作区失败", response.status);
+    throw new ApiError((!data.ok && data.error) || tr("克隆工作区失败"), response.status);
   }
   return data;
 }
@@ -145,7 +147,7 @@ export async function browseFilesystem(
   });
   const data = await json<FilesystemBrowseResponse | ErrorResponse>(response);
   if (!response.ok || !data.ok) {
-    throw new ApiError((!data.ok && data.error) || "浏览目录失败", response.status);
+    throw new ApiError((!data.ok && data.error) || tr("浏览目录失败"), response.status);
   }
   return data;
 }
@@ -156,7 +158,7 @@ export async function deleteWorkspace(workspaceId: string): Promise<DeleteWorksp
   });
   const data = await json<DeleteWorkspaceResponse | ErrorResponse>(response);
   if (!response.ok || !data.ok) {
-    throw new ApiError((!data.ok && data.error) || "移除工作区失败", response.status);
+    throw new ApiError((!data.ok && data.error) || tr("移除工作区失败"), response.status);
   }
   return data;
 }
@@ -169,7 +171,7 @@ export async function fetchSnapshot(runId: string): Promise<RunProjection> {
   const response = await fetch(runPath(runId), { cache: "no-store" });
   const data = await json<RunProjectionResponse | ErrorResponse>(response);
   if (!response.ok || !data.ok || data.projection.run_id !== runId) {
-    throw new ApiError((!data.ok && data.error) || "加载运行快照失败", response.status);
+    throw new ApiError((!data.ok && data.error) || tr("加载运行快照失败"), response.status);
   }
   return data.projection;
 }
@@ -181,7 +183,7 @@ export async function createRun(body: CreateRunBody): Promise<CreateRunResponse>
     body: JSON.stringify(body),
   });
   const data = await json<CreateRunResponse | ErrorResponse>(response);
-  if (!data.ok || !data.run_id) throw new ApiError(data.error || "未知错误", response.status);
+  if (!data.ok || !data.run_id) throw new ApiError(data.error || tr("未知错误"), response.status);
   return data;
 }
 
@@ -210,7 +212,7 @@ export async function postCommand(runId: string, body: CommandBody): Promise<Com
     }
     return { kind: "conflict", projection: fresh };
   }
-  return { kind: "rejected", error: data.error || "未知错误" };
+  return { kind: "rejected", error: data.error || tr("未知错误") };
 }
 
 export interface WorkbenchOptions {
@@ -252,7 +254,7 @@ export async function fetchAttemptArtifacts(
   const response = await fetch(url);
   const data = await json<AttemptArtifactsResponse | ErrorResponse>(response);
   if (!response.ok || !data.ok) {
-    throw new ApiError((!data.ok && data.error) || "读取执行产物失败", response.status);
+    throw new ApiError((!data.ok && data.error) || tr("读取执行产物失败"), response.status);
   }
   return data.artifacts;
 }
